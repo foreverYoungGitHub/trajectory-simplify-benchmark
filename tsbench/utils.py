@@ -3,15 +3,17 @@ from collections import defaultdict
 import numpy as np
 from scipy import interpolate
 
+from tsbench.algo import cal_dist
+
 def interpolate_trajectory(simplified_trajectory, timestamps):
-    t = simplified_trajectory[:,0]
-    x = simplified_trajectory[:,1]
-    y = simplified_trajectory[:,2]
-    f_x =interpolate.interp1d(t,x,kind='linear')
-    f_y =interpolate.interp1d(t,y,kind='linear')
-    x_interp = f_x(timestamps)
-    y_interp = f_y(timestamps)
-    return np.stack((timestamps, x_interp, y_interp), axis=-1)
+    n_interp = []
+    for i in range(1, simplified_trajectory.shape[1]):
+        t = simplified_trajectory[:,0]
+        x = simplified_trajectory[:,i]
+        f_x =interpolate.interp1d(t,x,kind='linear')
+        x_interp = f_x(timestamps)
+        n_interp.append(x_interp)
+    return np.stack((timestamps, *n_interp), axis=-1)
 
 def trajectorys_l2_distance(trajectory_1, trajectory_2):
     return np.linalg.norm(trajectory_1[:,1:] - trajectory_2[:,1:], axis=-1)
@@ -31,7 +33,10 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
     for tid, traj in trajectories.items():
         simplified_traj = simplified_trajectories[tid]
         interp_traj = interpolate_trajectory(simplified_traj, traj[:,0])
-        dist = trajectorys_l2_distance(traj, interp_traj)
+        if traj.shape[1] == 3:
+            dist = trajectorys_l2_distance(traj, interp_traj)
+        elif traj.shape[1] == 5:
+            dist = 1 - cal_dist.ious(traj[:,1:], interp_traj[:,1:])
         metrics["ratio"][tid] = simplified_traj.shape[0] / traj.shape[0]
         metrics["mean"][tid] = dist.mean()
         metrics["max"][tid] = dist.max()
