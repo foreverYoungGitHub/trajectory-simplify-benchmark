@@ -23,6 +23,7 @@ class BaseTS(ABC):
         simplified_trajectories = {}
         runtime_per_query = {}
         for tid, traj in trajectories.items():
+            assert np.all(traj[:-1, 0] <= traj[1:, 0]), "The trajectory is not sorted by time"
             ts = time()
             simplified_trajectory = self.simplify_one_trajectory(traj, **params)
             runtime_per_query[tid] = time() - ts

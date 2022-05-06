@@ -1,0 +1,4 @@
+name: MOTDataset
+path: ./dataset/GMOTv2/MOT20-01.txt
+key:
+  - bbox

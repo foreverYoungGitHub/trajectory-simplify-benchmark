@@ -1,3 +1,3 @@
-name: DouglasPeucker
+name: DP
 params:
   - epsilon: 0.0001
