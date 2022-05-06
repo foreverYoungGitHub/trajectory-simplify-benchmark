@@ -1,0 +1,3 @@
+name: TDTR
+params:
+  - epsilon: 0.0001

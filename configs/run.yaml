@@ -1,0 +1,10 @@
+defaults:
+  - _self_
+  - dataset: sample
+  - algo: dp
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+# Directories for data
+interim: ./interim
+output: ./output

@@ -1,0 +1,3 @@
+name: DouglasPeucker
+params:
+  - epsilon: 0.0001

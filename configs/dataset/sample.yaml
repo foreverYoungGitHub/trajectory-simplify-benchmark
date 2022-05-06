@@ -1,0 +1,4 @@
+name: SampleDataset
+path: ./dataset/sample/sample.csv
+key:
+  - trajectory

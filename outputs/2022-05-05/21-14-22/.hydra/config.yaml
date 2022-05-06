@@ -1,0 +1,12 @@
+interim: ./interim
+output: ./output
+dataset:
+  name: SampleDataset
+  path: ./dataset/sample/sample.csv
+  param: null
+  key:
+  - trajectory
+algo:
+  name: DouglasPeucker
+  param_index:
+  - epsilon: 0.0001
