@@ -7,3 +7,4 @@ It must returns an instance of :class:`BaseTS`.
 """
 
 from .dp import DP, TDTR, TDTR_IOU, TDTR_2Points
+from .dag import DAG
