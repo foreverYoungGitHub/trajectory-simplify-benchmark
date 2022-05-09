@@ -1,0 +1,4 @@
+name: DAG_2Points
+params:
+  - lower_bound: 40
+    upper_bound: 80

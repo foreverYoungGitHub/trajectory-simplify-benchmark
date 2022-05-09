@@ -1,4 +1,5 @@
 from typing import List, Callable
+from functools import partial
 
 import numpy as np
 
@@ -70,8 +71,23 @@ class TDTR(DP):
 class TDTR_IOU(TDTR):
     """Top Down Time Ratio with IOU distance"""
 
-    def dist_func(self, trajectory):
-        return cal_dist.cacl_SIOUs(trajectory)
+    def dist_func(self, trajectory, iou_type):
+        return cal_dist.cacl_SIOUs(trajectory, iou_type)
+
+    def simplify_one_trajectory(
+        self, trajectory: np.ndarray, epsilon: float, iou_type: str = "iou"
+    ) -> np.ndarray:
+        indices = np.unique(
+            recursive_simplify(
+                trajectory,
+                epsilon,
+                partial(self.dist_func, iou_type=iou_type),
+                0,
+                len(trajectory) - 1,
+            )
+        )
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
 
 
 @ALGO_REGISTRY.register()
