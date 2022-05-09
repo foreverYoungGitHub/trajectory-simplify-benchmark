@@ -1,3 +1,8 @@
 name: TDTR_IOU
 params:
   - epsilon: 0.1
+    iou_type: "iou"
+  - epsilon: 0.1
+    iou_type: "diou"
+  - epsilon: 0.1
+    iou_type: "ciou"

@@ -1,0 +1,11 @@
+name: DAG_IOU
+params:
+  - lower_bound: 0.015
+    upper_bound: 0.03
+    iou_type: "iou"
+  - lower_bound: 0.015
+    upper_bound: 0.03
+    iou_type: "diou"
+  - lower_bound: 0.015
+    upper_bound: 0.03
+    iou_type: "ciou"
