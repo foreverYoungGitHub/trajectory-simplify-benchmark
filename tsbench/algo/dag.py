@@ -1,5 +1,5 @@
 from typing import Dict, List, Callable
-from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 
@@ -97,6 +97,31 @@ class DAG(base.BaseTS):
     ) -> np.ndarray:
         indices = directed_acyclic_graph_search(
             trajectory, lower_bound, upper_bound, self.dist_func, self.integral_func
+        )
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
+
+
+@ALGO_REGISTRY.register()
+class DAG_IOU(DAG):
+    """Directed Acyclic Graph Based"""
+
+    def dist_func(self, trajectory, iou_type):
+        return cal_dist.cacl_LISSIOUs(trajectory, iou_type)
+
+    def simplify_one_trajectory(
+        self,
+        trajectory: np.ndarray,
+        lower_bound: float,
+        upper_bound: float,
+        iou_type: str = "iou",
+    ) -> np.ndarray:
+        indices = directed_acyclic_graph_search(
+            trajectory,
+            lower_bound,
+            upper_bound,
+            partial(self.dist_func, iou_type=iou_type),
+            self.integral_func,
         )
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
