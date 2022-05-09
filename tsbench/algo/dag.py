@@ -125,3 +125,26 @@ class DAG_IOU(DAG):
         )
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
+
+
+@ALGO_REGISTRY.register()
+class DAG_2Points(DAG):
+    """Top Down Time Ratio with IOU distance"""
+
+    def simplify_one_trajectory(
+        self,
+        trajectory: np.ndarray,
+        lower_bound: float,
+        upper_bound: float,
+    ) -> np.ndarray:
+        lt = trajectory[:, :3]
+        indices = directed_acyclic_graph_search(
+            lt, lower_bound, upper_bound, self.dist_func, self.integral_func
+        )
+        rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:]), axis=-1)
+        indices += directed_acyclic_graph_search(
+            rb, lower_bound, upper_bound, self.dist_func, self.integral_func
+        )
+        indices = np.unique(indices)
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
