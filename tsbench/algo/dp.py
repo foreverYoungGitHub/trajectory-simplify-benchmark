@@ -5,43 +5,42 @@ import numpy as np
 from tsbench.algo import base, cal_dist, ALGO_REGISTRY
 
 
-@ALGO_REGISTRY.register()
-class DP(base.BaseTS):
-    """DouglasPeucker"""
-
-    @staticmethod
-    def recursive_simplify(
+def recursive_simplify(
         trajectory: np.ndarray,
         epsilon: float,
         dist_func: Callable,
         start: int,
         end: int,
     ) -> List[int]:
-        assert start < end, (start, end)
-        if start + 1 == end:
-            return [start, end]
-        indices = []
-        dists = dist_func(trajectory[start : end + 1])
-        peak_index = dists.argmax()
-        if dists[peak_index] > epsilon:
-            peak_index += start + 1
-            indices += DP.recursive_simplify(
-                trajectory,
-                epsilon,
-                dist_func,
-                start,
-                peak_index,
-            )
-            indices += DP.recursive_simplify(
-                trajectory,
-                epsilon,
-                dist_func,
-                peak_index,
-                end,
-            )
-        else:
-            indices += [start, end]
-        return indices
+    assert start < end, (start, end)
+    if start + 1 == end:
+        return [start, end]
+    indices = []
+    dists = dist_func(trajectory[start : end + 1])
+    peak_index = dists.argmax()
+    if dists[peak_index] > epsilon:
+        peak_index += start + 1
+        indices += recursive_simplify(
+            trajectory,
+            epsilon,
+            dist_func,
+            start,
+            peak_index,
+        )
+        indices += recursive_simplify(
+            trajectory,
+            epsilon,
+            dist_func,
+            peak_index,
+            end,
+        )
+    else:
+        indices += [start, end]
+    return indices
+
+@ALGO_REGISTRY.register()
+class DP(base.BaseTS):
+    """DouglasPeucker"""    
 
     def dist_func(self, trajectory):
         return cal_dist.cacl_PEDs(trajectory)
@@ -50,7 +49,7 @@ class DP(base.BaseTS):
         self, trajectory: np.ndarray, epsilon: float
     ) -> np.ndarray:
         indices = np.unique(
-            DP.recursive_simplify(
+            recursive_simplify(
                 trajectory, epsilon, self.dist_func, 0, len(trajectory) - 1
             )
         )
@@ -82,11 +81,11 @@ class TDTR_2Points(TDTR):
         self, trajectory: np.ndarray, epsilon: float
     ) -> np.ndarray:
         lt = trajectory[:, :3]
-        indices = DP.recursive_simplify(
+        indices = recursive_simplify(
             lt, epsilon, self.dist_func, 0, len(trajectory) - 1
         )
         rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:]), axis=-1)
-        indices += DP.recursive_simplify(
+        indices += recursive_simplify(
             rb, epsilon, self.dist_func, 0, len(trajectory) - 1
         )
         indices = np.unique(indices)
