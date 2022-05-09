@@ -13,17 +13,19 @@ class BaseTS(ABC):
         to do the actually simplification
 
         Args:
-            trajectories (Dict[int, np.ndarray]): The full continous 
+            trajectories (Dict[int, np.ndarray]): The full continous
                 trajectories
 
         Returns:
-            Tuple[Dict[int, np.ndarray], Dict[int, float]]: 
+            Tuple[Dict[int, np.ndarray], Dict[int, float]]:
                 simplified trajectories, runtime per query
         """
         simplified_trajectories = {}
         runtime_per_query = {}
         for tid, traj in trajectories.items():
-            assert np.all(traj[:-1, 0] <= traj[1:, 0]), "The trajectory is not sorted by time"
+            assert np.all(
+                traj[:-1, 0] <= traj[1:, 0]
+            ), "The trajectory is not sorted by time"
             ts = time()
             simplified_trajectory = self.simplify_one_trajectory(traj, **params)
             runtime_per_query[tid] = time() - ts

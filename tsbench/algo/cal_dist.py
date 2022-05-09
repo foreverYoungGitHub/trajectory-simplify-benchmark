@@ -88,3 +88,15 @@ def cacl_LISSED(trajectory: np.ndarray) -> np.ndarray:
         return 0
     d = cacl_SEDs(trajectory)
     return (d * d).sum()
+
+
+def cacl_LASED(trajectory: np.ndarray) -> np.ndarray:
+    """Compute the Average Synchronized Euclidean Distance (LISSED)
+    distance for the middle points [1:-1] of the trajectory."""
+    assert (
+        trajectory.shape[1] == 3
+    ), f"To calculate SED, The feature dim for trajectory must be 3 (vs {trajectory.shape[1]})"
+    if trajectory.shape[0] == 2:
+        return 0
+    d = cacl_SEDs(trajectory)
+    return d.mean()
