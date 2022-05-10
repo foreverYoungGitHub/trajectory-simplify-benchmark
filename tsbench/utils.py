@@ -27,7 +27,7 @@ def interpolate_trajectories(trajectories, simplified_trajectories):
 
 
 def trajectorys_l2_distance(trajectory_1, trajectory_2):
-    return np.linalg.norm(trajectory_1[:, 1:] - trajectory_2[:, 1:], axis=-1)
+    return np.linalg.norm(trajectory_1[:, 1] - trajectory_2[:, 1], axis=-1)
 
 
 def evaluate_trajectory(trajectory, simplified_trajectory):
@@ -48,6 +48,8 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
         interp_traj = interpolate_trajectory(simplified_traj, traj[:, 0])
         if traj.shape[1] == 3:
             dist = trajectorys_l2_distance(traj, interp_traj)
+        elif traj.shape[1] == 4:
+            dist = trajectorys_l2_distance(traj[:,:3], interp_traj[:,:3]) / traj[:,3]
         elif traj.shape[1] == 5:
             dist = 1 - cal_dist.ious(traj[:, 1:], interp_traj[:, 1:])
         metrics["ratio"][tid] = simplified_traj.shape[0] / traj.shape[0]
