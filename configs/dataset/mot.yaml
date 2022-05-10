@@ -1,4 +1,4 @@
 name: MOTDataset
-path: ./dataset/MOT20/
+path: ./dataset/MOT20/sample
 key:
   - bbox

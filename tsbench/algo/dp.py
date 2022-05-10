@@ -108,3 +108,10 @@ class TDTR_2Points(TDTR):
         indices = np.unique(indices)
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
+
+@ALGO_REGISTRY.register()
+class TDTR_Points(TDTR):
+    """Top Down Time Ratio with IOU distance"""
+
+    def dist_func(self, trajectory):
+        return cal_dist.cacl_RSEDs(trajectory)
