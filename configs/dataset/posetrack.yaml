@@ -1,0 +1,4 @@
+name: PoseTrackDataset
+path: ./dataset/PoseTrack/sample/
+key:
+  - joints

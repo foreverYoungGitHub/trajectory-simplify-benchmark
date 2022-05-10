@@ -1,0 +1,6 @@
+name: TDTR_Points
+params:
+  - epsilon: 0.25
+  - epsilon: 0.5
+  - epsilon: 1
+  - epsilon: 2
