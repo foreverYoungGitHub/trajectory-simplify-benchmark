@@ -13,8 +13,8 @@ def recursive_simplify(
     start: int,
     end: int,
 ) -> List[int]:
-    assert start < end, (start, end)
-    if start + 1 == end:
+    assert start <= end, (start, end)
+    if start + 1 >= end:
         return [start, end]
     indices = []
     dists = dist_func(trajectory[start : end + 1])

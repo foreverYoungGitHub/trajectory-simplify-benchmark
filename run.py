@@ -7,7 +7,7 @@ import omegaconf
 import numpy as np
 
 import tsbench
-from tsbench.utils import evaluate_trajectories
+from tsbench.utils import evaluate_trajectories, interpolate_trajectories
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,19 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
                     },
                 }
             )
+
+            # (0) Dump the interpolate trajectories
+            interp_trajectories = interpolate_trajectories(
+                trajectories, simplifid_trajectories
+            )
+            out = (
+                Path(hydra.utils.to_absolute_path(cfg.output))
+                / cfg.dataset.name
+                / cfg.algo.name
+                / "_".join([str(v) for v in param.values()])
+            )
+            out.mkdir(exist_ok=True, parents=True)
+            dataset.dump_data(out, interp_trajectories)
 
         # (1) Save the result on the local log directory
         with open(f"result_{key}.yaml", "wt") as f:
