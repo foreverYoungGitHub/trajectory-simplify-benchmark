@@ -8,3 +8,4 @@ It must returns an instance of :class:`Dataset`.
 
 from .sample import SampleDataset
 from .mot import MOTDataset
+from .pose_track import PoseTrackDataset
