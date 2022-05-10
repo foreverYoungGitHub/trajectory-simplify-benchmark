@@ -2,6 +2,7 @@ from time import time
 from abc import ABC, abstractmethod
 from typing import Tuple, Dict
 
+import tqdm
 import numpy as np
 
 
@@ -22,7 +23,7 @@ class BaseTS(ABC):
         """
         simplified_trajectories = {}
         runtime_per_query = {}
-        for tid, traj in trajectories.items():
+        for tid, traj in tqdm.tqdm(trajectories.items()):
             assert np.all(
                 traj[:-1, 0] <= traj[1:, 0]
             ), "The trajectory is not sorted by time"
