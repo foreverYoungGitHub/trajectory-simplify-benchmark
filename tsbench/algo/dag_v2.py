@@ -36,10 +36,10 @@ def directed_acyclic_graph_search(
                     global_dists[end] = global_dists[start] + dist.sum()
                     break
                 # the distance between start and end over than threshold
-                elif dist.max() > epsilon:
+                elif dist.max() > 2*epsilon:
                     break
             # do not check the rest of unvisited points
-            if dist.max() > epsilon:
+            if dist.max() > 2*epsilon:
                 break
 
         # optimize the graph by minimizing global integral distance
