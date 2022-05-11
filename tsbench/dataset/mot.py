@@ -22,6 +22,7 @@ class MOTDataset(base.BaseDataset):
             filenames.append(txt_file.name)
 
             raw_data = np.loadtxt(txt_file, delimiter=",")
+            raw_data = raw_data[(raw_data[:,7] <= 7)]
             ids = np.unique(raw_data[:, 1])
             for idx in ids:
                 trajectory = raw_data[raw_data[:, 1] == idx]
