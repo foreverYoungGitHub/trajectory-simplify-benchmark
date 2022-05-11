@@ -50,6 +50,7 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
             out = (
                 Path(hydra.utils.to_absolute_path(cfg.output))
                 / cfg.dataset.name
+                / Path(cfg.dataset.path).name
                 / cfg.algo.name
                 / "_".join([str(v) for v in param.values()])
             )
@@ -64,6 +65,7 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
         out = (
             Path(hydra.utils.to_absolute_path(cfg.output))
             / cfg.dataset.name
+            / Path(cfg.dataset.path).name
             / cfg.algo.name
             / f"result_{key}.yaml"
         )
