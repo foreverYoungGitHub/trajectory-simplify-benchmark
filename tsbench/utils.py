@@ -52,7 +52,7 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
             dist = trajectorys_l2_distance(traj[:,:3], interp_traj[:,:3]) / traj[:,3]
         elif traj.shape[1] == 5:
             dist = 1 - cal_dist.ious(traj[:, 1:], interp_traj[:, 1:])
-        metrics["ratio"][tid] = simplified_traj.shape[0] / traj.shape[0]
+        metrics["ratio"][tid] = traj.shape[0] / simplified_traj.shape[0]
         metrics["mean"][tid] = dist.mean()
         metrics["max"][tid] = dist.max()
     return metrics

@@ -1,11 +1,38 @@
 name: DAG_IOU
 params:
-  - lower_bound: 0.015
-    upper_bound: 0.03
+  - lower_bound: 0.005 #x10
+    upper_bound: 0.01
     iou_type: "iou"
-  - lower_bound: 0.015
-    upper_bound: 0.03
+  - lower_bound: 0.06 #x20
+    upper_bound: 0.12
+    iou_type: "iou"
+  - lower_bound: 3.0 #x50
+    upper_bound: 6.0
+    iou_type: "iou"
+  - lower_bound: 0.005 #x10
+    upper_bound: 0.01
     iou_type: "diou"
-  - lower_bound: 0.015
-    upper_bound: 0.03
+  - lower_bound: 0.06 #x20
+    upper_bound: 0.12
+    iou_type: "diou"
+  - lower_bound: 3.0 #x50
+    upper_bound: 6.0
+    iou_type: "diou"
+  - lower_bound: 0.005 #x10
+    upper_bound: 0.01
     iou_type: "ciou"
+  - lower_bound: 0.06 #x20
+    upper_bound: 0.12
+    iou_type: "ciou"
+  - lower_bound: 3.0 #x50
+    upper_bound: 6.0
+    iou_type: "ciou"
+  # - lower_bound: 10.0
+  #   upper_bound: 20.0
+  #   iou_type: "iou"
+  # - lower_bound: 0.015
+  #   upper_bound: 0.03
+  #   iou_type: "diou"
+  # - lower_bound: 0.015
+  #   upper_bound: 0.03
+  #   iou_type: "ciou"

@@ -91,27 +91,33 @@ class TDTR_IOU(TDTR):
 
 
 @ALGO_REGISTRY.register()
-class TDTR_2Points(TDTR):
+class TDTR_Points(TDTR):
+    """Top Down Time Ratio with IOU distance"""
+
+    def dist_func(self, trajectory):
+        return cal_dist.cacl_RSEDs(trajectory)
+
+
+@ALGO_REGISTRY.register()
+class TDTR_2Points(TDTR_Points):
     """Top Down Time Ratio with IOU distance"""
 
     def simplify_one_trajectory(
-        self, trajectory: np.ndarray, epsilon: float
+        self, trajectory: np.ndarray, epsilon: float, ref_ratio: float = 0
     ) -> np.ndarray:
-        lt = trajectory[:, :3]
+        if ref_ratio <= 0:
+            ref_size = np.ones((trajectory.shape[0], 1))
+        else:
+            wh = trajectory[:, 3:] - trajectory[:, 1:3]
+            ref_size = ref_ratio * np.linalg.norm(wh, axis=1, keepdims=True)
+        lt = np.concatenate((trajectory[:, :3], ref_size), axis=-1)
         indices = recursive_simplify(
             lt, epsilon, self.dist_func, 0, len(trajectory) - 1
         )
-        rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:]), axis=-1)
+        rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:], ref_size), axis=-1)
         indices += recursive_simplify(
             rb, epsilon, self.dist_func, 0, len(trajectory) - 1
         )
         indices = np.unique(indices)
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
-
-@ALGO_REGISTRY.register()
-class TDTR_Points(TDTR):
-    """Top Down Time Ratio with IOU distance"""
-
-    def dist_func(self, trajectory):
-        return cal_dist.cacl_RSEDs(trajectory)

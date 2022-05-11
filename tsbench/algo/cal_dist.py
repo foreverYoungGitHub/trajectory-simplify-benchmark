@@ -171,6 +171,17 @@ def cacl_GILSED(trajectory: np.ndarray, p: float) -> np.ndarray:
     d = cacl_SEDs(trajectory)
     return np.linalg.norm(d, ord=p)
 
+def cacl_GILSIOUs(trajectory: np.ndarray, p: float, iou_type: str = "iou") -> np.ndarray:
+    """Compute the General Integral Local Synchronized IOU Distance (GILSIOU)
+    distance for the middle points [1:-1] of the trajectory."""
+    assert (
+        trajectory.shape[1] == 5
+    ), f"To calculate SED, The feature dim for trajectory must be 5 (vs {trajectory.shape[1]})"
+    if trajectory.shape[0] == 2:
+        return 0
+    d = cacl_SIOUs(trajectory, iou_type)
+    return np.linalg.norm(d, ord=p)
+
 def cacl_GILRSED(trajectory: np.ndarray, p: float) -> np.ndarray:
     """Compute the General Integral Local Refered Synchronized Euclidean Distance (GILSED)
     distance for the middle points [1:-1] of the trajectory."""

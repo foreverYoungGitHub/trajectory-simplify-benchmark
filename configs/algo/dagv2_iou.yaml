@@ -1,4 +1,4 @@
-name: TDTR_IOU
+name: DAGv2_IOU
 params:
   - epsilon: 0.03 #x10
     iou_type: "iou"
