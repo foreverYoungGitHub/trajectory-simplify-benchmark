@@ -141,6 +141,8 @@ class PoseTrackDataset(base.BaseDataset):
             bbox = trajectory["bbox"]
             wh = bbox[:, 2:] - bbox[:, :2]
             ref_size = np.linalg.norm(wh, axis=1, keepdims=True)
+        elif self.ref_type == "constant":
+            ref_size = np.ones([trajectory["joints"].shape[0], 1])
         else:
             joints = trajectory["joints"]
             wh = joints.max(axis=1) - joints.min(axis=1)
