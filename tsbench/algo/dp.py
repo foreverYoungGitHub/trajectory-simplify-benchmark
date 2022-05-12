@@ -97,6 +97,27 @@ class TDTR_Points(TDTR):
     def dist_func(self, trajectory):
         return cal_dist.cacl_RSEDs(trajectory)
 
+    def simplify_one_trajectory(
+        self, _trajectory: np.ndarray, epsilon: float, ref_ratio: float = 0
+    ) -> np.ndarray:
+        trajectory = np.copy(_trajectory)
+        if ref_ratio <= 0:
+            trajectory[:, 3] = 1
+        else:
+            trajectory[:, 3] = ref_ratio * trajectory[:, 3]
+
+        indices = np.unique(
+            recursive_simplify(
+                trajectory,
+                epsilon,
+                partial(self.dist_func),
+                0,
+                len(trajectory) - 1,
+            )
+        )
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
+
 
 @ALGO_REGISTRY.register()
 class TDTR_2Points(TDTR_Points):

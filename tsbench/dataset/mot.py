@@ -47,6 +47,9 @@ class MOTDataset(base.BaseDataset):
         all_trajectories = np.concatenate(all_trajectories, axis=0)
         all_trajectories[:, [0, 1]] = all_trajectories[:, [1, 0]]
         all_trajectories[:, 4:] -= all_trajectories[:, 2:4]
+        ends = np.ones([all_trajectories.shape[0], 4])
+        ends[:,1:] *= -1
+        all_trajectories = np.concatenate((all_trajectories, ends), axis=1)
 
         for f_index, filename in enumerate(self.filenames):
             trajectories = all_trajectories[
