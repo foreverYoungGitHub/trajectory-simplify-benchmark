@@ -34,14 +34,14 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
             )
             metrics = evaluate_trajectories(trajectories, simplifid_trajectories)
             metrics["runtime"] = runtime_per_query
-            res.append(
-                {
+            metrics = {
                     "param": dict(param),
                     "metrics": {
                         k: float(np.mean(list(v.values()))) for k, v in metrics.items()
                     },
                 }
-            )
+            res.append(metrics)
+            logger.info(metrics)
 
             # (0) Dump the interpolate trajectories
             interp_trajectories = interpolate_trajectories(
