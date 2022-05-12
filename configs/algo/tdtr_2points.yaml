@@ -2,13 +2,44 @@ name: TDTR_2Points
 params:
   - epsilon: 1.5 # x10
     ref_ratio: 0
+  - epsilon: 2 # x10
+    ref_ratio: 0
+  - epsilon: 3 # x50
+    ref_ratio: 0
+  - epsilon: 4 # x50
+    ref_ratio: 0
+  - epsilon: 5 # x50
+    ref_ratio: 0
   - epsilon: 8 # x20
+    ref_ratio: 0
+  - epsilon: 10 # x50
+    ref_ratio: 0
+  - epsilon: 15 # x50
+    ref_ratio: 0
+  - epsilon: 20 # x50
     ref_ratio: 0
   - epsilon: 25 # x50
     ref_ratio: 0
+
   - epsilon: 1 # x10
+    ref_ratio: 0.01
+  - epsilon: 2 # x20
     ref_ratio: 0.01
   - epsilon: 4 # x20
     ref_ratio: 0.01
+  - epsilon: 6 # x20
+    ref_ratio: 0.01
+  - epsilon: 8 # x20
+    ref_ratio: 0.01
+  - epsilon: 10 # x20
+    ref_ratio: 0.01
+  - epsilon: 12 # x20
+    ref_ratio: 0.01
   - epsilon: 14 # x50
     ref_ratio: 0.01
+  - epsilon: 15 # x50
+    ref_ratio: 0.01
+
+
+
+

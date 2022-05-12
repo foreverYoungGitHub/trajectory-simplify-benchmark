@@ -1,6 +1,53 @@
 name: TDTR_Points
 params:
-  - epsilon: 0.25
-  - epsilon: 0.5
   - epsilon: 1
+    ref_ratio: 0
   - epsilon: 2
+    ref_ratio: 0
+  - epsilon: 4
+    ref_ratio: 0
+  - epsilon: 8
+    ref_ratio: 0
+  - epsilon: 12
+    ref_ratio: 0
+  - epsilon: 16
+    ref_ratio: 0
+  - epsilon: 20
+    ref_ratio: 0
+  - epsilon: 25
+    ref_ratio: 0
+  - epsilon: 30
+    ref_ratio: 0
+  - epsilon: 40
+    ref_ratio: 0
+  - epsilon: 50
+    ref_ratio: 0
+  # with ref
+  - epsilon: 0.1
+    ref_ratio: 0.1
+  - epsilon: 0.25
+    ref_ratio: 0.1
+  - epsilon: 0.5
+    ref_ratio: 0.1
+  - epsilon: 0.75
+    ref_ratio: 0.1
+  - epsilon: 1
+    ref_ratio: 0.1
+  - epsilon: 1.5
+    ref_ratio: 0.1
+  - epsilon: 2
+    ref_ratio: 0.1
+  - epsilon: 3
+    ref_ratio: 0.1
+  - epsilon: 4
+    ref_ratio: 0.1
+  - epsilon: 5
+    ref_ratio: 0.1
+  - epsilon: 8
+    ref_ratio: 0.1
+  - epsilon: 10
+    ref_ratio: 0.1
+  - epsilon: 15
+    ref_ratio: 0.1
+  - epsilon: 20
+    ref_ratio: 0.1

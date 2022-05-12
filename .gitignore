@@ -2,8 +2,10 @@
 /dataset
 /interim
 /output
+/out
 /result_img
 
+*.pdf
 .idea
 
 

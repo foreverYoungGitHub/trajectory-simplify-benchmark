@@ -2,19 +2,41 @@ name: TDTR_IOU
 params:
   - epsilon: 0.03 #x10
     iou_type: "iou"
+  - epsilon: 0.04 #x10
+    iou_type: "iou"
+  - epsilon: 0.05 #x20
+    iou_type: "iou"
   - epsilon: 0.1 #x20
+    iou_type: "iou"
+  - epsilon: 0.15 #x20
+    iou_type: "iou"
+  - epsilon: 0.2 #x20
+    iou_type: "iou"
+  - epsilon: 0.25 #x20
+    iou_type: "iou"
+  - epsilon: 0.3 #x20
     iou_type: "iou"
   - epsilon: 0.4 #x50
     iou_type: "iou"
+  - epsilon: 0.5 #x50
+    iou_type: "iou"
   - epsilon: 0.03 #x10
+    iou_type: "diou"
+  - epsilon: 0.04 #x10
+    iou_type: "diou"
+  - epsilon: 0.05 #x20
     iou_type: "diou"
   - epsilon: 0.1 #x20
     iou_type: "diou"
+  - epsilon: 0.15 #x20
+    iou_type: "diou"
+  - epsilon: 0.2 #x20
+    iou_type: "diou"
+  - epsilon: 0.25 #x20
+    iou_type: "diou"
+  - epsilon: 0.3 #x20
+    iou_type: "diou"
   - epsilon: 0.4 #x50
     iou_type: "diou"
-  - epsilon: 0.03 #x10
-    iou_type: "ciou"
-  - epsilon: 0.1 #x20
-    iou_type: "ciou"
-  - epsilon: 0.4 #x50
-    iou_type: "ciou"
+  - epsilon: 0.5 #x50
+    iou_type: "diou"

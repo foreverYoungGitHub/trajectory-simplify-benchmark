@@ -1,4 +1,6 @@
 name: PoseTrackDataset
-path: ./dataset/PoseTrack/sample/
+path: ./dataset/PoseTrack/trainval #sample/
 key:
   - joints
+params:
+  ref_type: head
