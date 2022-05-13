@@ -5,8 +5,14 @@ import numpy as np
 
 from tsbench.algo import base, cal_dist, ALGO_REGISTRY
 
+def local_integral_func(previous_integral, current_dists):
+    return previous_integral + current_dists.sum()
+
+def local_general_integral_func(previous_integral, current_dists, p):
+    return np.linalg.norm([previous_integral, np.linalg.norm(current_dists, ord=p)], ord=p)
+
 def directed_acyclic_graph_search(
-    trajectory, epsilon, dist_func
+    trajectory, epsilon, dist_func, integral_func,
 ):
     """Path-based range query"""
     num_points = trajectory.shape[0]
@@ -33,7 +39,7 @@ def directed_acyclic_graph_search(
                 if dist.max() <= epsilon:
                     visit_status[end] = 1
                     parents[end] = start
-                    global_dists[end] = global_dists[start] + dist.sum()
+                    global_dists[end] = integral_func(global_dists[start], dist)
                     break
                 # the distance between start and end over than threshold
                 elif dist.max() > 2*epsilon:
@@ -53,7 +59,7 @@ def directed_acyclic_graph_search(
                 if start == parents[end]:
                     break
                 dist = dist_func(trajectory[start : end + 1]) if start + 1 < end else np.zeros(1)
-                g_dist = global_dists[start] + dist.sum()
+                g_dist = integral_func(global_dists[start], dist)
                 if dist.max() <= epsilon and g_dist < global_dists[end]:
                     parents[end] = start
                     global_dists[end] = g_dist
@@ -94,16 +100,21 @@ class DAGv2_IOU(DAGv2):
     def dist_func(self, trajectory, iou_type):
         return cal_dist.cacl_SIOUs(trajectory, iou_type)
 
+    def integral_func(self, previous_integral, current_dist, p):
+        return local_general_integral_func(previous_integral, current_dist, p)
+
     def simplify_one_trajectory(
         self,
         trajectory: np.ndarray,
         epsilon: float,
         iou_type: str = "iou",
+        p: float = 1,
     ) -> np.ndarray:
         indices = directed_acyclic_graph_search(
             trajectory,
             epsilon,
             partial(self.dist_func, iou_type=iou_type),
+            partial(self.integral_func, p=p),
         )
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
