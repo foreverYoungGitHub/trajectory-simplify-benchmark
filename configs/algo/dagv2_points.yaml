@@ -1,0 +1,32 @@
+name: DAGv2_Points
+params:
+  - epsilon: 0.1
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 0.25
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 1
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 1.5
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 2
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 3
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 4
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 5
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 8
+    ref_ratio: 0.1
+    p: 1
+  - epsilon: 10
+    ref_ratio: 0.1
+    p: 1
