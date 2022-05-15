@@ -5,14 +5,22 @@ import numpy as np
 
 from tsbench.algo import base, cal_dist, ALGO_REGISTRY
 
+
 def local_integral_func(previous_integral, current_dists):
     return previous_integral + current_dists.sum()
 
+
 def local_general_integral_func(previous_integral, current_dists, p):
-    return np.linalg.norm([previous_integral, np.linalg.norm(current_dists, ord=p)], ord=p)
+    return np.linalg.norm(
+        [previous_integral, np.linalg.norm(current_dists, ord=p)], ord=p
+    )
+
 
 def directed_acyclic_graph_search(
-    trajectory, epsilon, dist_func, integral_func,
+    trajectory,
+    epsilon,
+    dist_func,
+    integral_func,
 ):
     """Path-based range query"""
     num_points = trajectory.shape[0]
@@ -34,7 +42,11 @@ def directed_acyclic_graph_search(
             # edge test in descending order.
             for start in parent_index[::-1]:
                 # check with local integral distance
-                dist = dist_func(trajectory[start : end + 1]) if start + 1 < end else np.zeros(1)
+                dist = (
+                    dist_func(trajectory[start : end + 1])
+                    if start + 1 < end
+                    else np.zeros(1)
+                )
                 # find the first acceptable distance at start
                 if dist.max() <= epsilon:
                     visit_status[end] = 1
@@ -42,10 +54,10 @@ def directed_acyclic_graph_search(
                     global_dists[end] = integral_func(global_dists[start], dist)
                     break
                 # the distance between start and end over than threshold
-                elif dist.max() > 2*epsilon:
+                elif dist.max() > 2 * epsilon:
                     break
             # do not check the rest of unvisited points
-            if dist.max() > 2*epsilon:
+            if dist.max() > 2 * epsilon:
                 break
 
         # optimize the graph by minimizing global integral distance
@@ -58,7 +70,11 @@ def directed_acyclic_graph_search(
                 # The dist of all start > parents[end] overs than the lower bound
                 if start == parents[end]:
                     break
-                dist = dist_func(trajectory[start : end + 1]) if start + 1 < end else np.zeros(1)
+                dist = (
+                    dist_func(trajectory[start : end + 1])
+                    if start + 1 < end
+                    else np.zeros(1)
+                )
                 g_dist = integral_func(global_dists[start], dist)
                 if dist.max() <= epsilon and g_dist < global_dists[end]:
                     parents[end] = start
@@ -76,6 +92,7 @@ def directed_acyclic_graph_search(
     # reverse output indices
     return indices[::-1]
 
+
 @ALGO_REGISTRY.register()
 class DAGv2(base.BaseTS):
     """Directed Acyclic Graph Based"""
@@ -83,11 +100,20 @@ class DAGv2(base.BaseTS):
     def dist_func(self, trajectory):
         return cal_dist.cacl_SEDs(trajectory)
 
+    def integral_func(self, previous_integral, current_dist, p):
+        return local_general_integral_func(previous_integral, current_dist, p)
+
     def simplify_one_trajectory(
-        self, trajectory: np.ndarray, epsilon: float,
+        self,
+        trajectory: np.ndarray,
+        epsilon: float,
+        p: float = 1,
     ) -> np.ndarray:
         indices = directed_acyclic_graph_search(
-            trajectory, epsilon, self.dist_func,
+            trajectory,
+            epsilon,
+            self.dist_func,
+            partial(self.integral_func, p=p),
         )
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
@@ -99,9 +125,6 @@ class DAGv2_IOU(DAGv2):
 
     def dist_func(self, trajectory, iou_type):
         return cal_dist.cacl_SIOUs(trajectory, iou_type)
-
-    def integral_func(self, previous_integral, current_dist, p):
-        return local_general_integral_func(previous_integral, current_dist, p)
 
     def simplify_one_trajectory(
         self,
@@ -120,33 +143,30 @@ class DAGv2_IOU(DAGv2):
         return simplified_trajectory
 
 
-# @ALGO_REGISTRY.register()
-# class DAG_IOUv2(DAG):
-#     """Directed Acyclic Graph Based"""
+@ALGO_REGISTRY.register()
+class DAGv2_Points(DAGv2):
+    """Directed Acyclic Graph Based with point"""
 
-#     def dist_func(self, trajectory, p, iou_type):
-#         return cal_dist.cacl_GILSIOUs(trajectory, p, iou_type)
+    def dist_func(self, trajectory):
+        return cal_dist.cacl_RSEDs(trajectory)
 
-#     def integral_func(self, previous_integral, current_dist, start, end, p):
-#         return local_general_integral_func(previous_integral, current_dist, start, end, p)
+    def simplify_one_trajectory(
+        self, _trajectory: np.ndarray, epsilon: float, ref_ratio: float = 0, p: float = 1,
+    ) -> np.ndarray:
+        trajectory = np.copy(_trajectory)
+        if ref_ratio <= 0:
+            trajectory[:, 3] = 1
+        else:
+            trajectory[:, 3] = ref_ratio * trajectory[:, 3]
 
-#     def simplify_one_trajectory(
-#         self,
-#         trajectory: np.ndarray,
-#         lower_bound: float,
-#         upper_bound: float,
-#         p: float = 1,
-#         iou_type: str = "iou",
-#     ) -> np.ndarray:
-#         indices = directed_acyclic_graph_search(
-#             trajectory,
-#             lower_bound,
-#             upper_bound,
-#             partial(self.dist_func, iou_type=iou_type, p=p),
-#             partial(self.integral_func, p=p),
-#         )
-#         simplified_trajectory = trajectory[indices]
-#         return simplified_trajectory
+        indices = directed_acyclic_graph_search(
+            trajectory,
+            epsilon,
+            self.dist_func,
+            partial(self.integral_func, p=p),
+        )
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
 
 # @ALGO_REGISTRY.register()
 # class DAG_2Points(DAG):
