@@ -32,8 +32,8 @@ mot17_len = len(mot17.trajectory_data)
 mot17_traj = mot17.get_trajectories("bbox")
 mot17_len_dist, mot17_box_dist = get_mot_distribution(mot17_traj)
 mot17_len_dist, mot17_box_dist = (
-    mot17_len_dist[:int(0.95*len(mot17_len_dist))],
-    mot17_box_dist[:int(0.95*len(mot17_box_dist))],
+    mot17_len_dist[: int(0.95 * len(mot17_len_dist))],
+    mot17_box_dist[: int(0.95 * len(mot17_box_dist))],
 )
 
 mot20 = dataset.MOTDataset("./dataset/MOT20")
@@ -41,8 +41,8 @@ mot20_len = len(mot20.trajectory_data)
 mot20_traj = mot20.get_trajectories("bbox")
 mot20_len_dist, mot20_box_dist = get_mot_distribution(mot20_traj)
 mot20_len_dist, mot20_box_dist = (
-    mot20_len_dist[:int(0.95*len(mot20_len_dist))],
-    mot20_box_dist[:int(0.95*len(mot20_box_dist))],
+    mot20_len_dist[: int(0.95 * len(mot20_len_dist))],
+    mot20_box_dist[: int(0.95 * len(mot20_box_dist))],
 )
 
 
@@ -51,8 +51,8 @@ dancetrack_len = len(dancetrack.trajectory_data)
 dancetrack_traj = dancetrack.get_trajectories("bbox")
 dancetrack_len_dist, dancetrack_box_dist = get_mot_distribution(dancetrack_traj)
 dancetrack_len_dist, dancetrack_box_dist = (
-    dancetrack_len_dist[:int(0.95*len(dancetrack_len_dist))],
-    dancetrack_box_dist[:int(0.95*len(dancetrack_box_dist))],
+    dancetrack_len_dist[: int(0.95 * len(dancetrack_len_dist))],
+    dancetrack_box_dist[: int(0.95 * len(dancetrack_box_dist))],
 )
 
 # posetrack = dataset.PoseTrackDataset(
@@ -75,9 +75,9 @@ len_dataset = {
 print(len_dataset)
 
 sns.violinplot(
-    data=[mot17_len_dist, mot20_len_dist, dancetrack_len_dist]#, posetrack_len_dist]
+    data=[mot17_len_dist, mot20_len_dist, dancetrack_len_dist]  # , posetrack_len_dist]
 )
-plt.xticks([0, 1, 2], ["mot17", "mot20", "dancetrack"])#, "posetrack"])
+plt.xticks([0, 1, 2], ["mot17", "mot20", "dancetrack"])  # , "posetrack"])
 plt.savefig("len_dist.pdf")
 # plt.show()
 plt.clf()
