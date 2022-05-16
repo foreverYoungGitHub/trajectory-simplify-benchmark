@@ -1,5 +1,5 @@
 
-track_eval_path=/Users/yaliu/Documents/git/TrackEval
+track_eval_path=${PWD}/../TrackEval
 
 track_n=TDTR_IOU #TDTR_2Points
 
