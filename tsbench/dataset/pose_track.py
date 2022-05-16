@@ -15,14 +15,12 @@ class PoseTrackDataset(base.BaseDataset):
         self,
         path: str,
         ref_type: str = "head",
-        ref_ratio: float = 0.1,
         num_joints: int = 15,
         max_trajectories_per_file: int = 10000,
         **__: Any
     ) -> None:
         super().__init__(path)
         self.ref_type = ref_type
-        self.ref_ratio = ref_ratio
         self.num_joints = num_joints
         self.max_trajectories_per_file = max_trajectories_per_file
         self.trajectory_data, (
@@ -145,7 +143,7 @@ class PoseTrackDataset(base.BaseDataset):
             joints = trajectory["joints"]
             wh = joints.max(axis=1) - joints.min(axis=1)
             ref_size = np.linalg.norm(wh, axis=1, keepdims=True)
-        return self.ref_ratio * ref_size
+        return ref_size
 
     def get_trajectories(self, key: str) -> Dict[int, np.ndarray]:
         """get trajectories by key

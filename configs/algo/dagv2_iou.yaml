@@ -1,0 +1,20 @@
+name: DAGv2_IOU
+params:
+  - epsilon: 0.03 #x10
+    iou_type: "iou"
+  - epsilon: 0.1 #x20
+    iou_type: "iou"
+  - epsilon: 0.4 #x50
+    iou_type: "iou"
+  - epsilon: 0.03 #x10
+    iou_type: "diou"
+  - epsilon: 0.1 #x20
+    iou_type: "diou"
+  - epsilon: 0.4 #x50
+    iou_type: "diou"
+  - epsilon: 0.03 #x10
+    iou_type: "ciou"
+  - epsilon: 0.1 #x20
+    iou_type: "ciou"
+  - epsilon: 0.4 #x50
+    iou_type: "ciou"

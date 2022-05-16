@@ -13,13 +13,27 @@ def local_average_func(previous_integral, current_dist, start, end):
 def local_integral_func(previous_integral, current_dist, start, end):
     return previous_integral + current_dist
 
+
 def local_general_integral_func(previous_integral, current_dist, start, end, p):
     return np.linalg.norm((previous_integral, current_dist), ord=p)
+
 
 def directed_acyclic_graph_search(
     trajectory, lower_bound, upper_bound, dist_func, integral_func
 ):
     """Path-based range query"""
+    if False:
+        res = local_dist_analysis(trajectory, dist_func, integral_func)
+        import matplotlib.pyplot as plt
+
+        x = np.arange(res.shape[0])
+        plt.plot(x, res[:, 0], label="line 1")
+        plt.plot(x, res[:, 1], label="line 2")
+        plt.plot(x, res[:, 2], label="curve 1")
+        plt.legend()
+        plt.show()
+        assert False
+
     num_points = trajectory.shape[0]
     parents = np.ones(num_points, dtype=np.int) * -1
     global_dists = np.ones(num_points) * np.inf
@@ -84,6 +98,23 @@ def directed_acyclic_graph_search(
     return indices[::-1]
 
 
+def local_dist_analysis(trajectory, dist_func, integral_func):
+    num_points = trajectory.shape[0]
+    start = 0
+    local_start = [
+        dist_func(trajectory[start : end + 1]) for end in range(1, num_points)
+    ]
+    end = num_points - 1
+    local_end = [
+        dist_func(trajectory[start : end + 1]) for start in range(0, num_points - 1)
+    ]
+    global_dist = [
+        integral_func(local_start[start], local_end[start], start + 1, num_points - 1)
+        for start in range(0, num_points - 1)
+    ]
+    return np.array([local_start, local_end, global_dist]).T
+
+
 @ALGO_REGISTRY.register()
 class DAG(base.BaseTS):
     """Directed Acyclic Graph Based"""
@@ -130,6 +161,37 @@ class DAG_IOU(DAG):
 
 
 @ALGO_REGISTRY.register()
+class DAG_IOUv2(DAG):
+    """Directed Acyclic Graph Based"""
+
+    def dist_func(self, trajectory, p, iou_type):
+        return cal_dist.cacl_GILSIOUs(trajectory, p, iou_type)
+
+    def integral_func(self, previous_integral, current_dist, start, end, p):
+        return local_general_integral_func(
+            previous_integral, current_dist, start, end, p
+        )
+
+    def simplify_one_trajectory(
+        self,
+        trajectory: np.ndarray,
+        lower_bound: float,
+        upper_bound: float,
+        p: float = 1,
+        iou_type: str = "iou",
+    ) -> np.ndarray:
+        indices = directed_acyclic_graph_search(
+            trajectory,
+            lower_bound,
+            upper_bound,
+            partial(self.dist_func, iou_type=iou_type, p=p),
+            partial(self.integral_func, p=p),
+        )
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
+
+
+@ALGO_REGISTRY.register()
 class DAG_2Points(DAG):
     """Directed Acyclic Graph Based with 2 Point"""
 
@@ -151,6 +213,7 @@ class DAG_2Points(DAG):
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
 
+
 @ALGO_REGISTRY.register()
 class DAG_Points(DAG):
     """Directed Acyclic Graph Based with point"""
@@ -159,7 +222,9 @@ class DAG_Points(DAG):
         return cal_dist.cacl_GILRSED(trajectory, p)
 
     def integral_func(self, previous_integral, current_dist, start, end, p):
-        return local_general_integral_func(previous_integral, current_dist, start, end, p)
+        return local_general_integral_func(
+            previous_integral, current_dist, start, end, p
+        )
 
     def simplify_one_trajectory(
         self,

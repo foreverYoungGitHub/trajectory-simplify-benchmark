@@ -1,4 +1,3 @@
-from re import L
 import numpy as np
 
 
@@ -33,11 +32,13 @@ def cacl_SEDs(trajectory: np.ndarray) -> np.ndarray:
     d = np.linalg.norm(points - estimate_points, axis=-1)
     return d
 
+
 def cacl_RSEDs(trajectory: np.ndarray) -> np.ndarray:
     """Compute the Refered Synchronized Euclidean Distance (SED) distance
     for the middle points [1:-1] of the trajectory."""
-    d = cacl_SEDs(trajectory[:,:3])
-    return d / trajectory[1:-1,3]
+    d = cacl_SEDs(trajectory[:, :3])
+    return d / trajectory[1:-1, 3]
+
 
 def ious(bbox_1: np.ndarray, bbox_2: np.ndarray, iou_type: str = "iou") -> np.ndarray:
     """compute the IoU score for two list of bounding boxes
@@ -160,6 +161,7 @@ def cacl_LAIOUs(trajectory: np.ndarray, iou_type: str = "iou") -> np.ndarray:
     d = cacl_SIOUs(trajectory, iou_type)
     return (d * d).sum()
 
+
 def cacl_GILSED(trajectory: np.ndarray, p: float) -> np.ndarray:
     """Compute the General Integral Local Synchronized Euclidean Distance (GILSED)
     distance for the middle points [1:-1] of the trajectory."""
@@ -170,6 +172,21 @@ def cacl_GILSED(trajectory: np.ndarray, p: float) -> np.ndarray:
         return 0
     d = cacl_SEDs(trajectory)
     return np.linalg.norm(d, ord=p)
+
+
+def cacl_GILSIOUs(
+    trajectory: np.ndarray, p: float, iou_type: str = "iou"
+) -> np.ndarray:
+    """Compute the General Integral Local Synchronized IOU Distance (GILSIOU)
+    distance for the middle points [1:-1] of the trajectory."""
+    assert (
+        trajectory.shape[1] == 5
+    ), f"To calculate SED, The feature dim for trajectory must be 5 (vs {trajectory.shape[1]})"
+    if trajectory.shape[0] == 2:
+        return 0
+    d = cacl_SIOUs(trajectory, iou_type)
+    return np.linalg.norm(d, ord=p)
+
 
 def cacl_GILRSED(trajectory: np.ndarray, p: float) -> np.ndarray:
     """Compute the General Integral Local Refered Synchronized Euclidean Distance (GILSED)

@@ -1,0 +1,26 @@
+
+# tracks_pattern: ./dataset/MOT20/{seq_name}.txt
+# img_pattern: /Users/yaliu/Downloads/MOT20/train/{seq_name}/img1
+# output_pattern: ./output/MOTDataset/MOT20/imgs/{seq_name}
+
+# tracks_pattern: ./output/MOTDataset/MOT20/TDTR_IOU/0.1_iou/{seq_name}.txt
+# img_pattern: /Users/yaliu/Downloads/MOT20/train/{seq_name}/img1
+# output_pattern: ./output/MOTDataset/MOT20/TDTR_IOU/0.4_iou_imgs/{seq_name}
+
+# seq_name:
+#   - MOT20-01
+#   # - MOT20-02
+#   # - MOT20-03
+#   # - MOT20-05
+
+
+# tracks_pattern: ./dataset/DanceTrack/{seq_name}.txt
+# img_pattern: /Users/yaliu/Downloads/DanceTrack/val/dancetrack{seq_name}/img1
+# output_pattern: ./output/MOTDataset/DanceTrack/imgs/{seq_name}
+tracks_pattern: ./output/MOTDataset/DanceTrack/DAGv2_IOU/0.4_iou/{seq_name}.txt
+img_pattern: /Users/yaliu/Downloads/DanceTrack/val/dancetrack{seq_name}/img1
+output_pattern: ./output/MOTDataset/DanceTrack/DAGv2_IOU/0.4_iou_imgs/{seq_name}
+padding_num: 8
+
+seq_name:
+  - "0004"
