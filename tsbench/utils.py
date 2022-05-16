@@ -46,11 +46,13 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
     for tid, traj in trajectories.items():
         simplified_traj = simplified_trajectories[tid]
         interp_traj = interpolate_trajectory(simplified_traj, traj[:, 0])
-        assert traj.shape[1] in [3,4,5], traj.shape[1]
+        assert traj.shape[1] in [3, 4, 5], traj.shape[1]
         if traj.shape[1] == 3:
             dist = trajectorys_l2_distance(traj, interp_traj)
         elif traj.shape[1] == 4:
-            dist = trajectorys_l2_distance(traj[:,:3], interp_traj[:,:3]) #/ traj[:,3]
+            dist = trajectorys_l2_distance(
+                traj[:, :3], interp_traj[:, :3]
+            )  # / traj[:,3]
         elif traj.shape[1] == 5:
             dist = 1 - cal_dist.ious(traj[:, 1:], interp_traj[:, 1:])
         metrics["ratio"][tid] = traj.shape[0] / simplified_traj.shape[0]
