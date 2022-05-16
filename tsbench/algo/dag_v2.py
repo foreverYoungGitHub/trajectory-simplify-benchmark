@@ -151,7 +151,11 @@ class DAGv2_Points(DAGv2):
         return cal_dist.cacl_RSEDs(trajectory)
 
     def simplify_one_trajectory(
-        self, _trajectory: np.ndarray, epsilon: float, ref_ratio: float = 0, p: float = 1,
+        self,
+        _trajectory: np.ndarray,
+        epsilon: float,
+        ref_ratio: float = 0,
+        p: float = 1,
     ) -> np.ndarray:
         trajectory = np.copy(_trajectory)
         if ref_ratio <= 0:
@@ -168,51 +172,37 @@ class DAGv2_Points(DAGv2):
         simplified_trajectory = trajectory[indices]
         return simplified_trajectory
 
-# @ALGO_REGISTRY.register()
-# class DAG_2Points(DAG):
-#     """Directed Acyclic Graph Based with 2 Point"""
 
-#     def simplify_one_trajectory(
-#         self,
-#         trajectory: np.ndarray,
-#         lower_bound: float,
-#         upper_bound: float,
-#     ) -> np.ndarray:
-#         lt = trajectory[:, :3]
-#         indices = directed_acyclic_graph_search(
-#             lt, lower_bound, upper_bound, self.dist_func, self.integral_func
-#         )
-#         rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:]), axis=-1)
-#         indices += directed_acyclic_graph_search(
-#             rb, lower_bound, upper_bound, self.dist_func, self.integral_func
-#         )
-#         indices = np.unique(indices)
-#         simplified_trajectory = trajectory[indices]
-#         return simplified_trajectory
+@ALGO_REGISTRY.register()
+class DAGv2_2Points(DAGv2_Points):
+    """Directed Acyclic Graph Based with 2 Point"""
 
-# @ALGO_REGISTRY.register()
-# class DAG_Points(DAG):
-#     """Directed Acyclic Graph Based with point"""
-
-#     def dist_func(self, trajectory, p):
-#         return cal_dist.cacl_GILRSED(trajectory, p)
-
-#     def integral_func(self, previous_integral, current_dist, start, end, p):
-#         return local_general_integral_func(previous_integral, current_dist, start, end, p)
-
-#     def simplify_one_trajectory(
-#         self,
-#         trajectory: np.ndarray,
-#         lower_bound: float,
-#         upper_bound: float,
-#         p: float = 2,
-#     ) -> np.ndarray:
-#         indices = directed_acyclic_graph_search(
-#             trajectory,
-#             lower_bound,
-#             upper_bound,
-#             partial(self.dist_func, p=p),
-#             partial(self.integral_func, p=p),
-#         )
-#         simplified_trajectory = trajectory[indices]
-#         return simplified_trajectory
+    def simplify_one_trajectory(
+        self,
+        trajectory: np.ndarray,
+        epsilon: float,
+        ref_ratio: float = 0,
+        p: float = 1,
+    ) -> np.ndarray:
+        if ref_ratio <= 0:
+            ref_size = np.ones((trajectory.shape[0], 1))
+        else:
+            wh = trajectory[:, 3:] - trajectory[:, 1:3]
+            ref_size = ref_ratio * np.linalg.norm(wh, axis=1, keepdims=True)
+        lt = np.concatenate((trajectory[:, :3], ref_size), axis=-1)
+        indices = directed_acyclic_graph_search(
+            lt,
+            epsilon,
+            self.dist_func,
+            partial(self.integral_func, p=p),
+        )
+        rb = np.concatenate((trajectory[:, :1], trajectory[:, 3:], ref_size), axis=-1)
+        indices += directed_acyclic_graph_search(
+            rb,
+            epsilon,
+            self.dist_func,
+            partial(self.integral_func, p=p),
+        )
+        indices = np.unique(indices)
+        simplified_trajectory = trajectory[indices]
+        return simplified_trajectory
