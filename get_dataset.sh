@@ -24,4 +24,3 @@ then
     gdown 1AjiqAP2AGR_Qk8M0t2y388LvH7EDpZok
     unzip MOT17.zip -d .
 fi
-
