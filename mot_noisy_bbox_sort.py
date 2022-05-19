@@ -1,4 +1,6 @@
 from pathlib import Path
+from re import L
+from typing import Callable
 
 import tqdm
 import numpy as np
@@ -226,25 +228,45 @@ class Sort(object):
       return np.concatenate(ret)
     return np.empty((0,5))
 
-def add_noise_det(dets:np.ndarray=np.empty((0, 5)), ratio:float=0.1):
+def add_noise_det(dets:np.ndarray=np.empty((0, 5))):
+  mu, sigma = 0, 0.1
   ctrs = (dets[:, 2:4] + dets[:, :2])/2
   whs = (dets[:, 2:4] - dets[:, :2])/1
 
   scale = np.linalg.norm(dets[:, 2:4] - dets[:, :2], axis=1, keepdims=True)
-  noise = np.random.randn(dets.shape[0], 2) - 0.5
-  noise *= scale * ratio
+  noise = np.random.normal(mu, sigma/2, (dets.shape[0], 2))
+  noise *= scale
   ctrs += noise
   
-  noise = np.random.randn(dets.shape[0], 2) * 2 - 1
-  noise = 1 + ratio*noise
+  noise = np.random.normal(mu, sigma, (dets.shape[0], 2))
+  noise = 1 + noise
   whs *= noise
   
   # use clip to avoid outside of image
-  lt = np.clip(ctrs - whs, a_min=dets[:,:2].min(axis=0), a_max=dets[:,:2].max(axis=0))
-  rb = np.clip(ctrs + whs, a_min=dets[:,2:4].min(axis=0), a_max=dets[:,2:4].max(axis=0))
+  lt = np.clip(ctrs - whs/2, a_min=dets[:,:2].min(axis=0), a_max=dets[:,:2].max(axis=0))
+  rb = np.clip(ctrs + whs/2, a_min=dets[:,2:4].min(axis=0), a_max=dets[:,2:4].max(axis=0))
 
   return np.concatenate([lt, rb, dets[:,4:]], axis=1)
-    
+
+def add_idswitch(dets:np.ndarray=np.empty((0, 5)), tids:np.ndarray=np.empty((0)), iou_thresh:float=0.5, switch_prob:float=0.5):
+  ious = iou_batch(dets, dets)
+  switched_id = []
+  switch_pair = []
+  for r_idx, row in enumerate(ious):
+    if r_idx in switched_id:
+      continue
+    indices, = np.where(row > iou_thresh)
+    indices = indices[indices!=r_idx]
+    indices = indices[~np.isin(indices,switched_id)]
+    if len(indices) == 0:
+      continue
+    if np.random.randn() < switch_prob:
+      continue
+    switch_id = np.random.choice(indices)
+    switched_id += [r_idx, switch_id]
+    switch_pair += [[tids[r_idx], tids[switch_id]], [tids[switch_id], tids[r_idx]]]
+  return switch_pair
+
 def noise_bbox_sort(tracks):
   mot_tracker = Sort()
   max_frames_seq = tracks[:, 0].max()
@@ -278,15 +300,76 @@ def noise_bbox_sort(tracks):
     res.append(track_data[indices])
   return np.concatenate(res)
 
-def generate_noisy_mot_data(mot_dir:Path, output_dir:Path):
+def noise_bbox(tracks):
+  max_frames_seq = tracks[:, 0].max()
+  res = []
+  for t in tqdm.trange(1, max_frames_seq + 1):
+    framedata = tracks[tracks[:, 0] == t]
+    dets = framedata[:, 2:7]
+    dets[:, 2:4] += dets[:, 0:2] #convert to [x1,y1,w,h] to [x1,y1,x2,y2]
+    dets[:, 4] = 1
+
+    # adding bounding box noisy
+    dets = add_noise_det(dets)
+    
+    # generate output tracks
+    frames = framedata[:, :1]
+    gt_labels = framedata[:, 1:2]
+    dets[:, 2:4] -= dets[:, 0:2]
+    xyz = np.ones([framedata.shape[0], 3]) * -1
+    track_data = np.concatenate([frames, gt_labels, dets, xyz, gt_labels], axis=1)
+    res.append(track_data)
+  return np.concatenate(res)
+
+def noise_idswitch(tracks):
+  max_frames_seq = tracks[:, 0].max()
+  res = []
+  gt_labels = np.copy(tracks[:, 1:2])
+  for t in tqdm.trange(1, max_frames_seq + 1):
+    framedata = tracks[tracks[:, 0] == t]
+    dets = framedata[:, 2:7]
+    dets[:, 2:4] += dets[:, 0:2] #convert to [x1,y1,w,h] to [x1,y1,x2,y2]
+    dets[:, 4] = 1
+
+    # adding bounding box noisy
+    switch_pair = add_idswitch(dets, framedata[:, 1])
+    for switch in switch_pair:
+      tracks[(tracks[:, 0] >= t) & (tracks[:, 1] == switch[0]), 1] = 10000 + switch[1]
+    tracks[:, 1] %= 10000
+    
+    # generate output tracks
+    framedata = tracks[tracks[:, 0] == t]
+    frames = framedata[:, :1]
+    tids = framedata[:, 1:2]
+    dets[:, 2:4] -= dets[:, 0:2]
+    xyz = np.ones([framedata.shape[0], 3]) * -1
+    gt_label = gt_labels[tracks[:, 0] == t]
+    # if switch_pair:
+    #   print(switch_pair)
+    #   print(gt_label[:,0])
+    #   print(tids[:,0])
+    if len(tids) > len(np.unique(tids)):
+      print(t)
+      print(tids[:,0])
+      print(switch_pair)
+      assert False
+    track_data = np.concatenate([frames, tids, dets, xyz, gt_label], axis=1)
+    res.append(track_data)
+  return np.concatenate(res)
+
+def generate_noisy_mot_data(mot_dir:Path, output_dir:Path, noise_method:Callable):
   mot_dir = Path(mot_dir)
   output_dir = Path(output_dir)
   for txt_file in mot_dir.glob("*.txt"):
     tracks = np.loadtxt(txt_file, delimiter=",").astype(int)
-    update_tracks = noise_bbox_sort(tracks)
+    if tracks.shape[1] > 6:
+        tracks = tracks[(tracks[:, 7] <= 7)]
+    update_tracks = noise_method(tracks)
     output_dir.mkdir(exist_ok=True, parents=True)
     np.savetxt(
         output_dir/txt_file.name, update_tracks.astype(int), fmt="%i", delimiter=","
     )
 
-generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-sort")
+generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-sort", noise_bbox_sort)
+generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-bbox", noise_bbox)
+generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-idswitch", noise_idswitch)
