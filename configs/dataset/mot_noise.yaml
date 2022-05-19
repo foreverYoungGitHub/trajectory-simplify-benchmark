@@ -1,0 +1,4 @@
+name: MOTDataset
+path: ./dataset/MOT20-noisy-idswitch/
+key:
+  - bbox

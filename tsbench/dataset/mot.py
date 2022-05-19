@@ -35,6 +35,10 @@ class MOTDataset(base.BaseDataset):
                         "timestamp": trajectory[:, :1],
                     }
                 )
+                if trajectory.shape[1] >= 11:
+                    trajectories[-1]["gt_tids"] = (
+                        f_index * self.max_trajectories_per_file + trajectory[:, 10:11]
+                    )
         return trajectories, filenames
 
     def dump_data(self, output_dir: Path, trajectories: np.ndarray) -> None:
