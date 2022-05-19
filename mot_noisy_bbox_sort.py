@@ -1,12 +1,11 @@
 from pathlib import Path
-from re import L
-from typing import Callable
+from typing import Callable, List
 
 import tqdm
 import numpy as np
 from filterpy.kalman import KalmanFilter
 
-np.random.seed(0)
+seed = 42
 
 
 def linear_assignment(cost_matrix):
@@ -269,20 +268,33 @@ class Sort(object):
         return np.empty((0, 5))
 
 
-def add_noise_det(dets: np.ndarray = np.empty((0, 5))):
+def add_noise_det(
+    dets: np.ndarray = np.empty((0, 5)),
+    jitter_prob: float = 0.25,
+    rng=np.random.default_rng(seed),
+) -> np.ndarray:
+    """add bounding box jitter to the original trajectories
+
+    Args:
+        dets (np.ndarray): detection bounding box with (l,t,r,b,conf). Defaults to np.empty((0, 5)).
+        jitter_prob (float, optional): the prob of bounding box jitter. Defaults to 0.25.
+        rng (_type_, optional): random generator. Defaults to np.random.default_rng(seed).
+
+    Returns:
+        np.ndarray: jitter bounding box with (l,t,r,b,conf)
+    """
     mu, sigma = 0, 0.1
     ctrs = (dets[:, 2:4] + dets[:, :2]) / 2
     whs = (dets[:, 2:4] - dets[:, :2]) / 1
-
+    # add noise to center
     scale = np.linalg.norm(dets[:, 2:4] - dets[:, :2], axis=1, keepdims=True)
-    noise = np.random.normal(mu, sigma / 2, (dets.shape[0], 2))
+    noise = rng.normal(mu, sigma / 2, (dets.shape[0], 2))
     noise *= scale
     ctrs += noise
-
-    noise = np.random.normal(mu, sigma, (dets.shape[0], 2))
+    # add noise to wh
+    noise = rng.normal(mu, sigma, (dets.shape[0], 2))
     noise = 1 + noise
     whs *= noise
-
     # use clip to avoid outside of image
     lt = np.clip(
         ctrs - whs / 2, a_min=dets[:, :2].min(axis=0), a_max=dets[:, :2].max(axis=0)
@@ -290,8 +302,11 @@ def add_noise_det(dets: np.ndarray = np.empty((0, 5))):
     rb = np.clip(
         ctrs + whs / 2, a_min=dets[:, 2:4].min(axis=0), a_max=dets[:, 2:4].max(axis=0)
     )
-
-    return np.concatenate([lt, rb, dets[:, 4:]], axis=1)
+    # random jitter
+    jitter_dets = np.concatenate([lt, rb, dets[:, 4:]], axis=1)
+    mask = rng.random(jitter_dets.shape[0]) > jitter_prob
+    jitter_dets[mask] = dets[mask]
+    return jitter_dets
 
 
 def add_idswitch(
@@ -299,7 +314,20 @@ def add_idswitch(
     tids: np.ndarray = np.empty((0)),
     iou_thresh: float = 0.5,
     switch_prob: float = 0.5,
-):
+    rng=np.random.default_rng(seed),
+) -> List[List[float]]:
+    """add id switches for the high overlaped bounding boxes
+
+    Args:
+        dets (np.ndarray): detection bounding box with (l,t,r,b,conf). Defaults to np.empty((0, 5)).
+        tids (np.ndarray): the current trajectory id. Defaults to np.empty((0)).
+        iou_thresh (float, optional): the iou threshold for bounding box overlap. Defaults to 0.5.
+        switch_prob (float, optional): the probability of id switches . Defaults to 0.5.
+        rng (_type_, optional): random generator. Defaults to np.random.default_rng(seed).
+
+    Returns:
+        List[List[float]]: the switch pair
+    """
     ious = iou_batch(dets, dets)
     switched_id = []
     switch_pair = []
@@ -311,15 +339,23 @@ def add_idswitch(
         indices = indices[~np.isin(indices, switched_id)]
         if len(indices) == 0:
             continue
-        if np.random.randn() < switch_prob:
+        if rng.random() < switch_prob:
             continue
-        switch_id = np.random.choice(indices)
+        switch_id = rng.choice(indices)
         switched_id += [r_idx, switch_id]
         switch_pair += [[tids[r_idx], tids[switch_id]], [tids[switch_id], tids[r_idx]]]
     return switch_pair
 
 
-def noise_bbox_sort(tracks):
+def noise_bbox_sort(tracks: np.ndarray) -> np.ndarray:
+    """add bounding box jitter and use sort to generate the tid
+
+    Args:
+        tracks (np.ndarray): original mot tracks
+
+    Returns:
+        np.ndarray: mot tracks with noise
+    """
     mot_tracker = Sort()
     max_frames_seq = tracks[:, 0].max()
     res = []
@@ -355,7 +391,15 @@ def noise_bbox_sort(tracks):
     return np.concatenate(res)
 
 
-def noise_bbox(tracks):
+def noise_bbox(tracks: np.ndarray):
+    """add bounding box jitter and use the original tid
+
+    Args:
+        tracks (np.ndarray): original mot tracks
+
+    Returns:
+        np.ndarray: mot tracks with noise
+    """
     max_frames_seq = tracks[:, 0].max()
     res = []
     for t in tqdm.trange(1, max_frames_seq + 1):
@@ -377,7 +421,16 @@ def noise_bbox(tracks):
     return np.concatenate(res)
 
 
-def noise_idswitch(tracks):
+def noise_idswitch(tracks: np.ndarray) -> np.ndarray:
+    """use the original bounding box jitter and add id switch
+    for high overlapped bounding boxes
+
+    Args:
+        tracks (np.ndarray): original mot tracks
+
+    Returns:
+        np.ndarray: mot tracks with noise
+    """
     max_frames_seq = tracks[:, 0].max()
     res = []
     gt_labels = np.copy(tracks[:, 1:2])
@@ -402,15 +455,6 @@ def noise_idswitch(tracks):
         dets[:, 2:4] -= dets[:, 0:2]
         xyz = np.ones([framedata.shape[0], 3]) * -1
         gt_label = gt_labels[tracks[:, 0] == t]
-        # if switch_pair:
-        #   print(switch_pair)
-        #   print(gt_label[:,0])
-        #   print(tids[:,0])
-        if len(tids) > len(np.unique(tids)):
-            print(t)
-            print(tids[:, 0])
-            print(switch_pair)
-            assert False
         track_data = np.concatenate([frames, tids, dets, xyz, gt_label], axis=1)
         res.append(track_data)
     return np.concatenate(res)
