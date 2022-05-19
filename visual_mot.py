@@ -79,6 +79,7 @@ def visualize_sequences(
         img = cv2.imread(filename_t)
 
         framedata = tracks[tracks[:, 0] == t]
+        img_filled = img.copy()
         for obj in framedata:
             color = np.array(colors[obj[1] % len(colors)]) * 255
             cv2.rectangle(
@@ -89,7 +90,20 @@ def visualize_sequences(
                 thickness=1,
                 lineType=cv2.LINE_AA,
             )
-
+            if len(obj) >= 11:
+                current_gt_tid = obj[10]
+                previous_objs = tracks[tracks[:, 0] == t-1]
+                previous_obj = previous_objs[previous_objs[:, 10] == current_gt_tid]
+                if len(previous_obj) == 1 and previous_obj[0,1] != obj[1]:
+                    cv2.rectangle(
+                        img_filled,
+                        obj[2:4],
+                        obj[2:4] + obj[4:6],
+                        color,
+                        thickness=-1,
+                        lineType=cv2.LINE_AA,
+                    )
+        img = cv2.addWeighted(img, 0.8, img_filled, 0.2, 0)
         cv2.imwrite(str(output_folder / f"{t:0{padding_num}d}.jpg"), img)
 
     if create_video:
