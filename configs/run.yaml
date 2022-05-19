@@ -7,4 +7,4 @@ defaults:
 
 # Directories for data
 interim: ./interim
-output: 
+output: ./output
