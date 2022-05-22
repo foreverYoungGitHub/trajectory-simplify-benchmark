@@ -1,7 +1,8 @@
 defaults:
   - _self_
-  - dataset: sample
-  - algo: dp
+  - dataset: mot_noise
+  - dataset@gt_dataset: mot
+  - algo: tdtr_iou
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
