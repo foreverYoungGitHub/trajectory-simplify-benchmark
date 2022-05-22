@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 import tqdm
 import numpy as np
@@ -269,21 +269,23 @@ class Sort(object):
 
 
 def add_noise_det(
-    dets: np.ndarray = np.empty((0, 5)),
-    jitter_prob: float = 0.25,
-    rng=np.random.default_rng(seed),
+    dets: np.ndarray,
+    jitter_prob: float,
+    jitter_scale: float,
+    rng,
 ) -> np.ndarray:
     """add bounding box jitter to the original trajectories
 
     Args:
         dets (np.ndarray): detection bounding box with (l,t,r,b,conf). Defaults to np.empty((0, 5)).
         jitter_prob (float, optional): the prob of bounding box jitter. Defaults to 0.25.
-        rng (_type_, optional): random generator. Defaults to np.random.default_rng(seed).
+        jitter_scale (float, optional): the scale of the bounding box jitter. Defaults to 0.1.
+        rng (_type_): random generator. Defaults to np.random.default_rng(seed).
 
     Returns:
         np.ndarray: jitter bounding box with (l,t,r,b,conf)
     """
-    mu, sigma = 0, 0.1
+    mu, sigma = 0, jitter_scale
     ctrs = (dets[:, 2:4] + dets[:, :2]) / 2
     whs = (dets[:, 2:4] - dets[:, :2]) / 1
     # add noise to center
@@ -310,11 +312,11 @@ def add_noise_det(
 
 
 def add_idswitch(
-    dets: np.ndarray = np.empty((0, 5)),
-    tids: np.ndarray = np.empty((0)),
-    iou_thresh: float = 0.5,
-    switch_prob: float = 0.5,
-    rng=np.random.default_rng(seed),
+    dets: np.ndarray,
+    tids: np.ndarray,
+    iou_thresh: float,
+    switch_prob: float,
+    rng,
 ) -> List[List[float]]:
     """add id switches for the high overlaped bounding boxes
 
@@ -347,7 +349,7 @@ def add_idswitch(
     return switch_pair
 
 
-def noise_bbox_sort(tracks: np.ndarray) -> np.ndarray:
+def noise_bbox_sort(tracks: np.ndarray, config: Dict, rng) -> np.ndarray:
     """add bounding box jitter and use sort to generate the tid
 
     Args:
@@ -366,7 +368,7 @@ def noise_bbox_sort(tracks: np.ndarray) -> np.ndarray:
         dets[:, 4] = 1
 
         # adding bounding box noisy
-        dets = add_noise_det(dets)
+        dets = add_noise_det(dets, rng=rng, **config)
 
         # tracking
         trackers = mot_tracker.update(dets)
@@ -391,7 +393,7 @@ def noise_bbox_sort(tracks: np.ndarray) -> np.ndarray:
     return np.concatenate(res)
 
 
-def noise_bbox(tracks: np.ndarray):
+def noise_bbox(tracks: np.ndarray, config: Dict, rng):
     """add bounding box jitter and use the original tid
 
     Args:
@@ -409,7 +411,7 @@ def noise_bbox(tracks: np.ndarray):
         dets[:, 4] = 1
 
         # adding bounding box noisy
-        dets = add_noise_det(dets)
+        dets = add_noise_det(dets, rng=rng, **config)
 
         # generate output tracks
         frames = framedata[:, :1]
@@ -421,7 +423,7 @@ def noise_bbox(tracks: np.ndarray):
     return np.concatenate(res)
 
 
-def noise_idswitch(tracks: np.ndarray) -> np.ndarray:
+def noise_idswitch(tracks: np.ndarray, config: Dict, rng) -> np.ndarray:
     """use the original bounding box jitter and add id switch
     for high overlapped bounding boxes
 
@@ -441,7 +443,7 @@ def noise_idswitch(tracks: np.ndarray) -> np.ndarray:
         dets[:, 4] = 1
 
         # adding bounding box noisy
-        switch_pair = add_idswitch(dets, framedata[:, 1])
+        switch_pair = add_idswitch(dets, framedata[:, 1], rng=rng, **config)
         for switch in switch_pair:
             tracks[(tracks[:, 0] >= t) & (tracks[:, 1] == switch[0]), 1] = (
                 10000 + switch[1]
@@ -460,14 +462,14 @@ def noise_idswitch(tracks: np.ndarray) -> np.ndarray:
     return np.concatenate(res)
 
 
-def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Callable):
+def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Callable, config: Dict):
     mot_dir = Path(mot_dir)
     output_dir = Path(output_dir)
     for txt_file in mot_dir.glob("*.txt"):
         tracks = np.loadtxt(txt_file, delimiter=",").astype(int)
         if tracks.shape[1] > 6:
             tracks = tracks[(tracks[:, 7] <= 7)]
-        update_tracks = noise_method(tracks)
+        update_tracks = noise_method(tracks, config, rng=np.random.default_rng(seed))
         output_dir.mkdir(exist_ok=True, parents=True)
         np.savetxt(
             output_dir / txt_file.name,
@@ -476,7 +478,11 @@ def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Calla
             delimiter=",",
         )
 
+config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
+for c in config:
+    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
+    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
 
-generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-sort", noise_bbox_sort)
-generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-bbox", noise_bbox)
-generate_noisy_mot_data("dataset/MOT20", "dataset/MOT20-noisy-idswitch", noise_idswitch)
+config = [{"iou_thresh": iou_thresh, "switch_prob": switch_prob} for switch_prob in np.arange(0.1,0.6,0.1) for iou_thresh in [0.5, 0.75]]
+for c in config:
+    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-idswitch/prob_{c['switch_prob']:.2f}_iou_{c['iou_thresh']:.2f}", noise_idswitch, c)
