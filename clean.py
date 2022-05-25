@@ -86,7 +86,7 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
                 / "_".join([str(v) for v in param.values()])
             )
             out.mkdir(exist_ok=True, parents=True)
-            dataset.dump_data(out, interp_trajectories)
+            gt_dataset.dump_data(out, interp_trajectories)
 
         # (1) Save the result on the local log directory
         with open(f"result_{key}.yaml", "wt") as f:
