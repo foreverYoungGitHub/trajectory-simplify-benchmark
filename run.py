@@ -57,23 +57,23 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
             out.mkdir(exist_ok=True, parents=True)
             dataset.dump_data(out, interp_trajectories)
 
-        # (1) Save the result on the local log directory
-        with open(f"result_{key}.yaml", "wt") as f:
-            yaml.dump(res, f)
+            # (1) Save the result on the local log directory
+            with open(f"result_{key}.yaml", "wt") as f:
+                yaml.dump(res, f)
 
-        # (2) And the output directory.
-        out = (
-            Path(hydra.utils.to_absolute_path(cfg.output))
-            / cfg.dataset.name
-            / Path(cfg.dataset.path).name
-            / cfg.algo.name
-            / f"result_{key}.yaml"
-        )
-        out.parent.mkdir(
-            exist_ok=True, parents=True
-        )  # Make sure the parent directory exists
-        with out.open("wt") as f:
-            yaml.dump(res, f)
+            # (2) And the output directory.
+            out = (
+                Path(hydra.utils.to_absolute_path(cfg.output))
+                / cfg.dataset.name
+                / Path(cfg.dataset.path).name
+                / cfg.algo.name
+                / f"result_{key}.yaml"
+            )
+            out.parent.mkdir(
+                exist_ok=True, parents=True
+            )  # Make sure the parent directory exists
+            with out.open("wt") as f:
+                yaml.dump(res, f)
 
 
 if __name__ == "__main__":

@@ -65,6 +65,7 @@ def visualize_sequences(
 ):
     colors = generate_colors()
     max_frames_seq = tracks[:, 0].max()
+    previous_tid = {}
     for t in tqdm.trange(1, max_frames_seq + 1):
         filename_t = str(img_folder / f"{t:0{padding_num}d}")
         if os.path.exists(filename_t + ".png"):
@@ -91,10 +92,8 @@ def visualize_sequences(
                 lineType=cv2.LINE_AA,
             )
             if len(obj) >= 11:
-                current_gt_tid = obj[10]
-                previous_objs = tracks[tracks[:, 0] == t-1]
-                previous_obj = previous_objs[previous_objs[:, 10] == current_gt_tid]
-                if len(previous_obj) == 1 and previous_obj[0,1] != obj[1]:
+                gt_tid = obj[10]
+                if gt_tid in previous_tid and obj[1]!=previous_tid[gt_tid]:
                     cv2.rectangle(
                         img_filled,
                         obj[2:4],
@@ -103,6 +102,7 @@ def visualize_sequences(
                         thickness=-1,
                         lineType=cv2.LINE_AA,
                     )
+                previous_tid[gt_tid] = obj[1]
         img = cv2.addWeighted(img, 0.8, img_filled, 0.2, 0)
         cv2.imwrite(str(output_folder / f"{t:0{padding_num}d}.jpg"), img)
 
