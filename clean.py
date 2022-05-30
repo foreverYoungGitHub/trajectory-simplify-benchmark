@@ -53,10 +53,10 @@ def main(cfg: omegaconf.dictconfig.DictConfig) -> None:
         path=hydra.utils.to_absolute_path(cfg.gt_dataset.path), **params
     )
 
-    for key in cfg.dataset.key:
+    for kid, key in enumerate(cfg.dataset.key):
         trajectories = dataset.get_trajectories(key)
         gt_tids = dataset.get_trajectories("gt_tids")
-        gt_trajectories = gt_dataset.get_trajectories(key)
+        gt_trajectories = gt_dataset.get_trajectories(cfg.gt_dataset.key[kid])
         res = []
         for param in cfg.algo.params:
             simplified_trajectories, runtime_per_query = algo.simplify(

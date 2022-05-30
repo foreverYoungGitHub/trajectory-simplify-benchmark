@@ -288,15 +288,21 @@ def add_noise_det(
     mu, sigma = 0, jitter_scale
     ctrs = (dets[:, 2:4] + dets[:, :2]) / 2
     whs = (dets[:, 2:4] - dets[:, :2]) / 1
+    scores = np.ones(dets.shape[0])
     # add noise to center
     scale = np.linalg.norm(dets[:, 2:4] - dets[:, :2], axis=1, keepdims=True)
     noise = rng.normal(mu, sigma / 2, (dets.shape[0], 2))
+    scores -= noise.sum(axis=1)
     noise *= scale
     ctrs += noise
     # add noise to wh
     noise = rng.normal(mu, sigma, (dets.shape[0], 2))
+    scores -= noise.sum(axis=1)
     noise = 1 + noise
     whs *= noise
+    # get scores
+    scores = np.clip(scores, 0, 1)
+    
     # use clip to avoid outside of image
     lt = np.clip(
         ctrs - whs / 2, a_min=dets[:, :2].min(axis=0), a_max=dets[:, :2].max(axis=0)
@@ -305,7 +311,7 @@ def add_noise_det(
         ctrs + whs / 2, a_min=dets[:, 2:4].min(axis=0), a_max=dets[:, 2:4].max(axis=0)
     )
     # random jitter
-    jitter_dets = np.concatenate([lt, rb, dets[:, 4:]], axis=1)
+    jitter_dets = np.concatenate([lt, rb, scores[:, None]], axis=1)
     mask = rng.random(jitter_dets.shape[0]) > jitter_prob
     jitter_dets[mask] = dets[mask]
     return jitter_dets
@@ -473,16 +479,17 @@ def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Calla
         output_dir.mkdir(exist_ok=True, parents=True)
         np.savetxt(
             output_dir / txt_file.name,
-            update_tracks.astype(int),
-            fmt="%i",
+            update_tracks,
+            fmt="%.2f",
             delimiter=",",
         )
 
-config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
+# config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
+config = [{"jitter_prob": 0.1, "jitter_scale": 0.1}]
 for c in config:
-    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
+    # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
     generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
 
-config = [{"iou_thresh": iou_thresh, "switch_prob": switch_prob} for switch_prob in np.arange(0.1,0.6,0.1) for iou_thresh in [0.5, 0.75]]
-for c in config:
-    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-idswitch/prob_{c['switch_prob']:.2f}_iou_{c['iou_thresh']:.2f}", noise_idswitch, c)
+# config = [{"iou_thresh": iou_thresh, "switch_prob": switch_prob} for switch_prob in np.arange(0.1,0.6,0.1) for iou_thresh in [0.5, 0.75]]
+# for c in config:
+#     generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-idswitch/prob_{c['switch_prob']:.2f}_iou_{c['iou_thresh']:.2f}", noise_idswitch, c)

@@ -114,6 +114,24 @@ def cacl_SIOUs(trajectory: np.ndarray, iou_type: str = "iou") -> np.ndarray:
     return d
 
 
+def cacl_WSIOUs(trajectory: np.ndarray, iou_type: str = "iou") -> np.ndarray:
+    """Compute the weighted SIOU distance for the middle points [1:-1] of the trajectory."""
+    assert (
+        trajectory.shape[1] == 6
+    ), f"To calculate SIOU, The feature dim for trajectory must be 5 (vs {trajectory.shape[1]})"
+    time_ratio = (trajectory[1:-1, :1] - trajectory[:1, :1]) / (
+        trajectory[-1:, :1] - trajectory[:1, :1] + 1e-10
+    )
+    box_start = trajectory[:1, 1:5]
+    box_end = trajectory[-1:, 1:5]
+    boxes = trajectory[1:-1, 1:5]
+    estimate_boxes = box_start * (1 - time_ratio) + box_end * time_ratio
+    d = 1 - ious(boxes, estimate_boxes, iou_type)
+    # use confidence score to weight the distance
+    d = trajectory[1:-1, 5] * d 
+    return d
+
+
 def cacl_LISSED(trajectory: np.ndarray) -> np.ndarray:
     """Compute the Local Integral Square Synchronized Euclidean Distance (LISSED)
     distance for the middle points [1:-1] of the trajectory."""

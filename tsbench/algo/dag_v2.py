@@ -21,6 +21,7 @@ def directed_acyclic_graph_search(
     epsilon,
     dist_func,
     integral_func,
+    search_list: List = []
 ):
     """Path-based range query"""
     num_points = trajectory.shape[0]
@@ -31,6 +32,9 @@ def directed_acyclic_graph_search(
     # visit_status: 0 for unvisited, 1 for visit(k+1), 2 for visit(k), 3 for visited cached
     indices = np.arange(num_points)
     visit_status = np.zeros(num_points, dtype=np.int8)
+    if len(search_list) > 0:
+        visit_status += 3
+        visit_status[search_list] = 0
     visit_status[0] = 2
 
     while visit_status[-1] == 0:
@@ -47,17 +51,19 @@ def directed_acyclic_graph_search(
                     if start + 1 < end
                     else np.zeros(1)
                 )
+                mask = visit_status[start+1:end] != 3
+                max_dist = dist[mask].max() if len(mask) > 0 and np.any(mask) else 0
                 # find the first acceptable distance at start
-                if dist.max() <= epsilon:
+                if max_dist <= epsilon:
                     visit_status[end] = 1
                     parents[end] = start
                     global_dists[end] = integral_func(global_dists[start], dist)
                     break
                 # the distance between start and end over than threshold
-                elif dist.max() > 2 * epsilon:
+                elif max_dist > 2 * epsilon:
                     break
             # do not check the rest of unvisited points
-            if dist.max() > 2 * epsilon:
+            if max_dist > 2 * epsilon:
                 break
 
         # optimize the graph by minimizing global integral distance
@@ -75,8 +81,10 @@ def directed_acyclic_graph_search(
                     if start + 1 < end
                     else np.zeros(1)
                 )
+                mask = visit_status[start+1:end] != 3
+                max_dist = dist[mask].max() if len(mask) > 0 and np.any(mask) else 0
                 g_dist = integral_func(global_dists[start], dist)
-                if dist.max() <= epsilon and g_dist < global_dists[end]:
+                if max_dist <= epsilon and g_dist < global_dists[end]:
                     parents[end] = start
                     global_dists[end] = g_dist
 

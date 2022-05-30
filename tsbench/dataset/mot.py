@@ -26,12 +26,13 @@ class MOTDataset(base.BaseDataset):
             ids = np.unique(raw_data[:, 1]).astype(int)
             for idx in ids:
                 trajectory = raw_data[raw_data[:, 1] == idx]
-                bbox = trajectory[:, 2:6]
-                bbox[:, 2:] += bbox[:, :2]
+                bbox_c = trajectory[:, 2:7]
+                bbox_c[:, 2:4] += bbox_c[:, :2]
                 trajectories.append(
                     {
                         "tid": f_index * self.max_trajectories_per_file + idx,
-                        "bbox": bbox,
+                        "bbox": bbox_c[:,:4],
+                        "bbox_c": bbox_c,
                         "timestamp": trajectory[:, :1],
                     }
                 )

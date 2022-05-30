@@ -1,0 +1,24 @@
+name: OCDAG_IOU
+params:
+  - high_conf_thresh: 0.99
+    epsilon_1: 0.1 #x10
+    epsilon_2: 0.03 #x10
+    iou_type: "iou"
+  - high_conf_thresh: 0.99
+    epsilon_1: 0.3 #x10
+    epsilon_2: 0.1 #x10
+    iou_type: "iou"
+  # - epsilon: 0.4 #x50
+  #   iou_type: "iou"
+  # - epsilon: 0.03 #x10
+  #   iou_type: "diou"
+  # - epsilon: 0.1 #x20
+  #   iou_type: "diou"
+  # - epsilon: 0.4 #x50
+  #   iou_type: "diou"
+  # - epsilon: 0.03 #x10
+  #   iou_type: "ciou"
+  # - epsilon: 0.1 #x20
+  #   iou_type: "ciou"
+  # - epsilon: 0.4 #x50
+  #   iou_type: "ciou"
