@@ -17,11 +17,7 @@ def local_general_integral_func(previous_integral, current_dists, p):
 
 
 def directed_acyclic_graph_search(
-    trajectory,
-    epsilon,
-    dist_func,
-    integral_func,
-    search_list: List = []
+    trajectory, epsilon, dist_func, integral_func, search_list: List = []
 ):
     """Path-based range query"""
     num_points = trajectory.shape[0]
@@ -51,7 +47,7 @@ def directed_acyclic_graph_search(
                     if start + 1 < end
                     else np.zeros(1)
                 )
-                mask = visit_status[start+1:end] != 3
+                mask = visit_status[start + 1 : end] != 3
                 max_dist = dist[mask].max() if len(mask) > 0 and np.any(mask) else 0
                 # find the first acceptable distance at start
                 if max_dist <= epsilon:
@@ -81,7 +77,7 @@ def directed_acyclic_graph_search(
                     if start + 1 < end
                     else np.zeros(1)
                 )
-                mask = visit_status[start+1:end] != 3
+                mask = visit_status[start + 1 : end] != 3
                 max_dist = dist[mask].max() if len(mask) > 0 and np.any(mask) else 0
                 g_dist = integral_func(global_dists[start], dist)
                 if max_dist <= epsilon and g_dist < global_dists[end]:

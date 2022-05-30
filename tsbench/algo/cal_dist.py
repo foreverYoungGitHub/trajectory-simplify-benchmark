@@ -89,7 +89,7 @@ def ious(bbox_1: np.ndarray, bbox_2: np.ndarray, iou_type: str = "iou") -> np.nd
         return np.clip(diou, -1.0, 1.0)
 
     if iou_type == "ciou":
-        v = (4 / (np.pi ** 2)) * np.power(
+        v = (4 / (np.pi**2)) * np.power(
             (np.arctan(wh_1[:, 0] / wh_1[:, 1]) - np.arctan(wh_2[:, 0] / wh_2[:, 1])),
             2,
         )
@@ -128,7 +128,7 @@ def cacl_WSIOUs(trajectory: np.ndarray, iou_type: str = "iou") -> np.ndarray:
     estimate_boxes = box_start * (1 - time_ratio) + box_end * time_ratio
     d = 1 - ious(boxes, estimate_boxes, iou_type)
     # use confidence score to weight the distance
-    d = trajectory[1:-1, 5] * d 
+    d = trajectory[1:-1, 5] * d
     return d
 
 

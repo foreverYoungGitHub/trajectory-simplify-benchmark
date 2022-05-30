@@ -31,7 +31,7 @@ class MOTDataset(base.BaseDataset):
                 trajectories.append(
                     {
                         "tid": f_index * self.max_trajectories_per_file + idx,
-                        "bbox": bbox_c[:,:4],
+                        "bbox": bbox_c[:, :4],
                         "bbox_c": bbox_c,
                         "timestamp": trajectory[:, :1],
                     }
