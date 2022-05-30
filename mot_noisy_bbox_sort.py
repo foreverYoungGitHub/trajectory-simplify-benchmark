@@ -20,6 +20,62 @@ def linear_assignment(cost_matrix):
         x, y = linear_sum_assignment(cost_matrix)
         return np.array(list(zip(x, y)))
 
+def ious(bbox_1: np.ndarray, bbox_2: np.ndarray, iou_type: str = "iou") -> np.ndarray:
+    """compute the IoU score for two list of bounding boxes
+
+    Args:
+        bbox_1 (np.ndarray): bounding boxes, format with ltrb
+        bbox_2 (np.ndarray): bounding boxes, format with ltrb
+        iou_type (str): the type of the iou scores
+
+    Returns:
+        np.ndarray: IoU score
+    """
+    assert iou_type in [
+        "iou",
+        "diou",
+        "ciou",
+    ], "Expected iou_type are [iou, diou, ciou], " "but got {}".format(iou_type)
+
+    assert (
+        bbox_1.shape[0] == bbox_2.shape[0]
+    ), "The length of the dataset has to be same"
+
+    lt = np.max((bbox_1[:, :2], bbox_2[:, :2]), axis=0)
+    rb = np.min((bbox_1[:, 2:], bbox_2[:, 2:]), axis=0)
+    wh_1 = bbox_1[:, 2:] - bbox_1[:, :2]
+    wh_2 = bbox_2[:, 2:] - bbox_2[:, :2]
+
+    area_i = np.prod(rb - lt, axis=1) * (lt < rb).all(axis=1)
+    area_1 = np.prod(wh_1, axis=1)
+    area_2 = np.prod(wh_2, axis=1)
+
+    area_union = area_1 + area_2 - area_i
+    iou = (area_i + 1e-7) / (area_union + 1e-7)
+
+    if iou_type == "iou":
+        return iou
+
+    ctr_1 = (bbox_1[:, :2] + bbox_1[:, 2:]) / 2
+    ctr_2 = (bbox_2[:, :2] + bbox_2[:, 2:]) / 2
+    outer_lt = np.min((bbox_1[:, :2], bbox_2[:, :2]), axis=0)
+    outer_rb = np.max((bbox_1[:, 2:], bbox_2[:, 2:]), axis=0)
+
+    inter_diag = ((ctr_1 - ctr_2) ** 2).sum(axis=1)
+    outer_diag = ((outer_rb - outer_lt) ** 2).sum(axis=1) + 1e-7
+
+    if iou_type == "diou":
+        diou = iou - inter_diag / outer_diag
+        return np.clip(diou, -1.0, 1.0)
+
+    if iou_type == "ciou":
+        v = (4 / (np.pi**2)) * np.power(
+            (np.arctan(wh_1[:, 0] / wh_1[:, 1]) - np.arctan(wh_2[:, 0] / wh_2[:, 1])),
+            2,
+        )
+        alpha = v / (1 - iou + v + 1e-7)
+        ciou = iou - (inter_diag / outer_diag + alpha * v)
+        return np.clip(ciou, -1.0, 1.0)
 
 def iou_batch(bb_test, bb_gt):
     """
@@ -288,20 +344,15 @@ def add_noise_det(
     mu, sigma = 0, jitter_scale
     ctrs = (dets[:, 2:4] + dets[:, :2]) / 2
     whs = (dets[:, 2:4] - dets[:, :2]) / 1
-    scores = np.ones(dets.shape[0])
     # add noise to center
     scale = np.linalg.norm(dets[:, 2:4] - dets[:, :2], axis=1, keepdims=True)
     noise = rng.normal(mu, sigma / 2, (dets.shape[0], 2))
-    scores -= noise.sum(axis=1)
     noise *= scale
     ctrs += noise
     # add noise to wh
     noise = rng.normal(mu, sigma, (dets.shape[0], 2))
-    scores -= noise.sum(axis=1)
     noise = 1 + noise
     whs *= noise
-    # get scores
-    scores = np.clip(scores, 0, 1)
     
     # use clip to avoid outside of image
     lt = np.clip(
@@ -311,7 +362,9 @@ def add_noise_det(
         ctrs + whs / 2, a_min=dets[:, 2:4].min(axis=0), a_max=dets[:, 2:4].max(axis=0)
     )
     # random jitter
-    jitter_dets = np.concatenate([lt, rb, scores[:, None]], axis=1)
+    jitter_dets = np.concatenate([lt, rb, dets[:,4:]], axis=1)
+    jitter_dets[:,4] = ious(jitter_dets[:,:4], dets[:,:4], "diou") # get scores
+    jitter_dets[:,4] = np.clip(jitter_dets[:, 4], 0, 1)
     mask = rng.random(jitter_dets.shape[0]) > jitter_prob
     jitter_dets[mask] = dets[mask]
     return jitter_dets
@@ -484,8 +537,8 @@ def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Calla
             delimiter=",",
         )
 
-# config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
-config = [{"jitter_prob": 0.1, "jitter_scale": 0.1}]
+config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
+# config = [{"jitter_prob": 0.1, "jitter_scale": 0.1}]
 for c in config:
     # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
     generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
