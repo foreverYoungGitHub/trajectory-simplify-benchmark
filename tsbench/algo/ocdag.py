@@ -55,12 +55,15 @@ class OCDAG_IOU(OCDAG):
     def simplify_one_trajectory(
         self,
         trajectory: np.ndarray,
-        high_conf_thresh: float,
         epsilon_1: float,
         epsilon_2: float,
+        high_conf_thresh: float = 0,
+        high_conf_precentile: int = 0,
         iou_type: str = "iou",
         p: float = 1,
     ) -> np.ndarray:
+        high_conf_thresh_precentile = np.percentile(trajectory[:, 5], high_conf_precentile)
+        high_conf_thresh = max(high_conf_thresh_precentile, high_conf_thresh)
         (indices,) = np.where(trajectory[:, 5] >= high_conf_thresh)
         indices = np.unique([*indices, 0, len(trajectory) - 1])
         # print(f"high conf: {len(indices)}/{len(trajectory)}")
