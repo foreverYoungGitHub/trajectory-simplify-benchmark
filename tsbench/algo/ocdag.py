@@ -61,7 +61,7 @@ class OCDAG_IOU(OCDAG):
         iou_type: str = "iou",
         p: float = 1,
     ) -> np.ndarray:
-        indices, = np.where(trajectory[:, 5] >= high_conf_thresh)
+        (indices,) = np.where(trajectory[:, 5] >= high_conf_thresh)
         indices = np.unique([*indices, 0, len(trajectory) - 1])
 
         search_space = []
@@ -82,5 +82,5 @@ class OCDAG_IOU(OCDAG):
             partial(self.integral_func, p=p),
             search_space,
         )
-        simplified_trajectory = trajectory[indices,:5]
+        simplified_trajectory = trajectory[indices, :5]
         return simplified_trajectory
