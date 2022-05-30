@@ -63,6 +63,7 @@ class OCDAG_IOU(OCDAG):
     ) -> np.ndarray:
         (indices,) = np.where(trajectory[:, 5] >= high_conf_thresh)
         indices = np.unique([*indices, 0, len(trajectory) - 1])
+        print(f"high conf: {len(indices)}/{len(trajectory)}")
 
         search_space = []
         for i in range(len(indices) - 1):
@@ -74,6 +75,8 @@ class OCDAG_IOU(OCDAG):
                 indices[i] + 1,
             )
         search_space = np.unique(search_space)
+        print(f"search space: {len(search_space)}/{len(trajectory)}")
+
 
         indices = dag_v2.directed_acyclic_graph_search(
             trajectory,
@@ -82,5 +85,7 @@ class OCDAG_IOU(OCDAG):
             partial(self.integral_func, p=p),
             search_space,
         )
+        print(f"final: {len(indices)}/{len(trajectory)}")
+
         simplified_trajectory = trajectory[indices, :5]
         return simplified_trajectory

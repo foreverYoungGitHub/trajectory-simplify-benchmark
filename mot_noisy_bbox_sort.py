@@ -537,8 +537,8 @@ def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Calla
             delimiter=",",
         )
 
-config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
-# config = [{"jitter_prob": 0.1, "jitter_scale": 0.1}]
+# config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
+config = [{"jitter_prob": 1., "jitter_scale": 0.05}]
 for c in config:
     # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
     generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
