@@ -43,6 +43,8 @@ def evaluate_trajectory(trajectory, simplified_trajectory):
 
 def evaluate_trajectories(trajectories, simplified_trajectories):
     metrics = defaultdict(dict)
+    num_nodes = 0
+    num_simplified_nodes = 0
     for tid, traj in trajectories.items():
         simplified_traj = simplified_trajectories[tid]
         interp_traj = interpolate_trajectory(simplified_traj, traj[:, 0])
@@ -58,4 +60,7 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
         metrics["ratio"][tid] = traj.shape[0] / simplified_traj.shape[0]
         metrics["mean"][tid] = dist.mean()
         metrics["max"][tid] = dist.max()
+        num_nodes += traj.shape[0]
+        num_simplified_nodes += simplified_traj.shape[0]
+    metrics["total_ratio"] = {0: num_nodes / num_simplified_nodes}
     return metrics
