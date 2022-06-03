@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Callable, Dict, List
 
@@ -398,9 +399,10 @@ def add_idswitch(
         (indices,) = np.where(row > iou_thresh)
         indices = indices[indices != r_idx]
         indices = indices[~np.isin(indices, switched_id)]
+        prob = rng.random()
         if len(indices) == 0:
             continue
-        if rng.random() < switch_prob:
+        if prob > switch_prob:
             continue
         switch_id = rng.choice(indices)
         switched_id += [r_idx, switch_id]
@@ -427,29 +429,51 @@ def noise_bbox_sort(tracks: np.ndarray, config: Dict, rng) -> np.ndarray:
         dets[:, 4] = 1
 
         # adding bounding box noisy
-        dets = add_noise_det(dets, rng=rng, **config)
+        # dets = add_noise_det(dets, rng=rng, **config)
 
         # tracking
         trackers = mot_tracker.update(dets)
 
         # matching
-        ious = iou_batch(dets, trackers)
-        max_index = np.argmax(ious, axis=-1)
-
-        # generate output tracks
-        tid = trackers[max_index, 4:]
-        frames = framedata[:, :1]
-        gt_labels = framedata[:, 1:2]
+        matches, unmatched_detections, unmatched_trackers = associate_detections_to_trackers(dets, trackers, 0.01)
+        if len(unmatched_detections) > 0:
+            logging.info(
+                f"timestamp {t} has {len(unmatched_detections)} unmatched detection, which are: \n {framedata[unmatched_detections, 1]}"
+            )
+        if len(unmatched_trackers) > 0:
+            logging.warning(
+                f"timestamp {t} has {len(unmatched_trackers)} unmatched tracks, which are: \n {trackers[unmatched_trackers, 4]}"
+            )
         dets[:, 2:4] -= dets[:, 0:2]
-        xyz = np.ones([framedata.shape[0], 3]) * -1
+        # generate output tracks
+        tid = trackers[matches[:,1], 4:]
+        frames = framedata[matches[:,0], :1]
+        gt_labels = framedata[matches[:,0], 1:2]
+        dets = framedata[matches[:,0], 2:7]
+        xyz = np.ones([matches.shape[0], 3]) * -1
         track_data = np.concatenate([frames, tid, dets, xyz, gt_labels], axis=1)
 
         # remove redundant index
-        _, indices = np.unique(tid[:, 0], return_index=True)
-        res.append(track_data[indices])
+        res.append(track_data)
     # reset KalmanBoxTracker.count
     KalmanBoxTracker.count = 0
-    return np.concatenate(res)
+    res = np.concatenate(res)
+    gt_labels, gt_counts = np.unique(res[:,10], return_counts=True)
+    all_gt_labels, all_gt_counts = np.unique(tracks[:,1], return_counts=True)
+    keep_gt_labels = []
+    for label, count in zip(all_gt_labels, all_gt_counts):
+        if label not in gt_labels:
+            continue
+        track_count = gt_counts[gt_labels==label]
+        assert track_count.shape[0] == 1
+        if track_count[0] < count / 5:
+            continue
+        keep_gt_labels.append(label)
+    # print(keep_gt_labels)
+    logging.warning(f"num keep/all tracks in gt: {len(keep_gt_labels)}/{len(all_gt_labels)}")
+    # mask = np.isin(gt_tracks[:,1], keep_gt_labels)
+    return res
+    
 
 
 def noise_bbox(tracks: np.ndarray, config: Dict, rng):
@@ -538,11 +562,14 @@ def generate_noisy_mot_data(mot_dir: Path, output_dir: Path, noise_method: Calla
         )
 
 # config = [{"jitter_prob": jitter_prob, "jitter_scale": jitter_scale} for jitter_prob in np.arange(0.1,1.,0.1) for jitter_scale in np.arange(0.05,0.2,0.05)]
-config = [{"jitter_prob": 1., "jitter_scale": 0.05}]
-for c in config:
-    # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
-    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
-
-# config = [{"iou_thresh": iou_thresh, "switch_prob": switch_prob} for switch_prob in np.arange(0.1,0.6,0.1) for iou_thresh in [0.5, 0.75]]
+# config = [{"jitter_prob": 1., "jitter_scale": 0.05}]
 # for c in config:
-#     generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-idswitch/prob_{c['switch_prob']:.2f}_iou_{c['iou_thresh']:.2f}", noise_idswitch, c)
+    # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-sort/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox_sort, c)
+    # generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-noisy-bbox/prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
+    # generate_noisy_mot_data("dataset/DanceTrack", f"dataset/DanceTrack/DanceTrack-noisy-bbox-prob_{c['jitter_prob']:.2f}_scale_{c['jitter_scale']:.2f}", noise_bbox, c)
+
+# generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20-gt-sort/", noise_bbox_sort, {})
+
+config = [{"iou_thresh": iou_thresh, "switch_prob": switch_prob} for switch_prob in np.arange(0.05,0.30,0.05) for iou_thresh in [0.5]]
+for c in config:
+    generate_noisy_mot_data("dataset/MOT20", f"dataset/MOT20/MOT20-noisy-idswitch-prob_{c['switch_prob']:.2f}_iou_{c['iou_thresh']:.2f}", noise_idswitch, c)
