@@ -1,0 +1,3 @@
+pyyaml
+hydra-core
+hydra_colorlog

@@ -62,5 +62,5 @@ def evaluate_trajectories(trajectories, simplified_trajectories):
         metrics["max"][tid] = dist.max()
         num_nodes += traj.shape[0]
         num_simplified_nodes += simplified_traj.shape[0]
-    metrics["total_ratio"] = {0: num_nodes / num_simplified_nodes}
+    # metrics["total_ratio"] = {0: num_nodes / num_simplified_nodes}
     return metrics
